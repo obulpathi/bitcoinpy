@@ -8,6 +8,7 @@ import gevent.pywsgi
 from gevent import Greenlet
 from gevent.server import StreamServer
 
+import os
 import signal
 import struct
 import socket
@@ -64,6 +65,7 @@ if __name__ == '__main__':
 
     settings['port'] = int(settings['port'])
     settings['rpcport'] = int(settings['rpcport'])
+    settings['db'] = os.path.expanduser(settings['db'])
 
     log = Log(settings['log'])
 
