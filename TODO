@@ -1,0 +1,13 @@
+
+See BUGS for other info.
+
+multiple peer support; do something useful with CAddresses
+
+incoming peer support
+
+P2P commands:
+	alert
+
+Evaluate this checklist:
+https://en.bitcoin.it/wiki/Protocol_rules#.22block.22_messages
+
