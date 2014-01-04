@@ -5,13 +5,13 @@
 # Distributed under the MIT/X11 software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-
+import os
 import sys
 import time
-import Log
-import MemPool
-import ChainDb
 import cStringIO
+from log import Log
+from mempool import MemPool
+from chaindb import ChainDb
 
 from bitcoin.coredefs import NETWORKS
 from bitcoin.core import CBlock
@@ -20,7 +20,7 @@ from bitcoin.scripteval import VerifySignature
 
 NET_SETTINGS = {
 	'mainnet' : {
-		'log' : '/spare/tmp/testscript.log',
+		'log' : 'testscript.log',
 		'db' : '/spare/tmp/chaindb'
 	},
 	'testnet3' : {
@@ -42,10 +42,11 @@ if len(sys.argv) > 2:
 if len(sys.argv) > 3:
 	SETTINGS['log'] = sys.argv[3]
 
-log = Log.Log(SETTINGS['log'])
-mempool = MemPool.MemPool(log)
-chaindb = ChainDb.ChainDb(SETTINGS['db'], log, mempool,
-			  NETWORKS[MY_NETWORK], True)
+datadir = "~/.bitcoinpy"
+datadir = os.path.expanduser(datadir)
+log = Log(SETTINGS['log'])
+mempool = MemPool(log)
+chaindb = ChainDb(SETTINGS['db'], datadir, log, mempool, NETWORKS[MY_NETWORK], True)
 chaindb.blk_cache.max = 500
 
 if end_height < 0 or end_height > chaindb.getheight():
@@ -56,8 +57,7 @@ scanned_tx = 0
 failures = 0
 opcount = {}
 
-SKIP_TX = {
-}
+SKIP_TX = {}
 
 
 def scan_tx(tx):
