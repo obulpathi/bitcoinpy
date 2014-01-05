@@ -16,8 +16,10 @@ def MyHash160(s):
 key = Key()
 key.generate()
 key.set_compressed(True)
-private_key = key.get_privkey().encode('hex')
-public_key = key.get_pubkey().encode('hex')
+private_key = key.get_privkey()
+public_key = key.get_pubkey()
+private_key_hex = private_key.encode('hex')
+public_key_hex = public_key.encode('hex')
 # print "Private key: ", private_key
 # print "Public key: ", public_key
 
@@ -25,7 +27,7 @@ public_key = bytearray.fromhex("0450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D851
 # public_key = "0x0450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B23522CD470243453A299FA9E77237716103ABC11A1DF38855ED6F2EE187E9C582BA6"
 
 # Perform SHA-256 and RIPEMD-160 hashing on public key
-hash160_address = MyHash160(public_key)
+hash160_address = MyHash160(public_key.toBinStr())
 
 # add version byte: 0x00 for Main Network
 extended_address = '\x00' + hash160_address
