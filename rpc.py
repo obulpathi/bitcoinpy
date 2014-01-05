@@ -18,6 +18,7 @@ import bitcoin.coredefs
 from bitcoin.serialize import uint256_from_compact
 
 VALID_RPCS = {
+    "getbalance",
     "getblockcount",
     "getblock",
     "getblockhash",
@@ -25,6 +26,7 @@ VALID_RPCS = {
     "getinfo",
     "getrawmempool",
     "getrawtransaction",
+    "getreceivedbyaddress",
     "getwork",
     "submitblock",
     "help",
@@ -88,6 +90,7 @@ class RPCExec(object):
 
     def help(self, params):
         s = "Available RPC calls:\n"
+        s += "getbalance <address> - Return balance associtated with the <address>\n"
         s += "getblock <hash> - Return block header and list of transactions\n"
         s += "getblockcount - number of blocks in the longest block chain\n"
         s += "getblockhash <index> - Returns hash of block in best-block-chain at <index>\n"
@@ -100,6 +103,9 @@ class RPCExec(object):
         s += "help - this message\n"
         s += "stop - stop node\n"
         return (s, None)
+
+    def getbalance(self, params):
+        return (self.chaindb.getbalance(params[0]), None)
 
     def getblock(self, params):
         err = { "code" : -1, "message" : "invalid params" }
@@ -178,6 +184,9 @@ class RPCExec(object):
 
         ser_tx = tx.serialize()
         return (ser_tx.encode('hex'), None)
+
+    def getreceivedbyaddress(self, params):
+        return (0.0, None)
 
     def getwork_new(self):
         err = { "code" : -6, "message" : "internal error" }

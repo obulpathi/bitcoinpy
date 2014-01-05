@@ -131,6 +131,37 @@ class ChainDb(object):
 
         return True
 
+    def getbalance(self, address):
+        balance = 0.0
+        end_height = self.getheight()
+        print "end_height: ", end_height
+        for height in xrange(end_height):
+            print "height: ", height
+            data = self.db.Get('height:' + str(height))
+            print "data at height: ", height, data
+            heightidx = HeightIdx()
+            heightidx.deserialize(data)
+            blkhash = heightidx.blocks[0]
+            # ser_hash = ser_uint256(blkhash)
+            
+            #f = cStringIO.StringIO(self.getblock(ser_hash))
+            # f = cStringIO.StringIO(self.getblock(blkhash))
+            # block = CBlock()
+            # block.deserialize(f)
+            block = self.getblock(blkhash)
+            print "block: ", block
+            
+            for tx in block.vtx:
+                print "\ttransaction: ", tx
+                for txout in tx.vout:
+                    print "\t\ttxout: ", txout
+                    print "\t\tscript: ", txout.scriptPubKey
+                    print "\t\taddress: ", address
+                    balance = balance + 1
+                    if txout.scriptPubKey[:-2] == address:
+                        balance = balance + txout.nValue
+        return balance
+
     def gettxidx(self, txhash):
         ser_txhash = ser_uint256(txhash)
         try:
