@@ -14,6 +14,7 @@ import sys
 import itertools
 
 import chaindb
+import wallet
 import bitcoin.coredefs
 from bitcoin.serialize import uint256_from_compact
 
@@ -24,6 +25,7 @@ VALID_RPCS = {
     "getblockhash",
     "getconnectioncount",
     "getinfo",
+    "getnewaddress",
     "getrawmempool",
     "getrawtransaction",
     "getreceivedbyaddress",
@@ -158,6 +160,10 @@ class RPCExec(object):
         else:
             d['testnet'] = True
         return (d, None)
+
+    def getnewaddress(self, params):
+        address = wallet.getnewaddress()
+        return (address, None)
 
     def getrawmempool(self, params):
         l = []

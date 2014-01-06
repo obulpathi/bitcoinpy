@@ -178,6 +178,11 @@ def test(otherversion):
     # uncomment this to reencode the private keys created by early versions of this script
     #reencode(sys.argv[1])
 
+def getnewaddress():
+    key = gen_eckey()
+    address, private_key = get_addr(key)
+    return address
+
 if __name__ == '__main__':
     import optparse
     parser = optparse.OptionParser(usage="%prog [options]")
