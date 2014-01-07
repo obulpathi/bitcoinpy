@@ -3506,7 +3506,7 @@ def sendtoaddress(address, amount):
     return True
 
 if __name__ == "__main__":
-    wallet_dir = os.path.expanduser("~/bitcoinpy")
+    wallet_dir = os.path.expanduser("~/.bitcoinpy")
     wallet_name = "wallet.dat"
     db_env = create_env(wallet_dir)
     walletfile = os.path.join(wallet_dir, wallet_name)
