@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+
+import os
+import os.path
+from bsddb.db import *
+
+"""
 #-*- coding: utf-8 -*-
 pywversion="2.1.7"
 never_update=False
@@ -56,8 +62,6 @@ except:
 from datetime import datetime
 from subprocess import *
 
-import os
-import os.path
 import platform
 
 max_version = 81000
@@ -129,12 +133,12 @@ def determine_db_name():
 # from the SlowAES project, http://code.google.com/p/slowaes (aes.py)
 
 def append_PKCS7_padding(s):
-	"""return s padded to a multiple of 16-bytes by PKCS7 padding"""
+	"return s padded to a multiple of 16-bytes by PKCS7 padding"
 	numpads = 16 - (len(s)%16)
 	return s + numpads*chr(numpads)
 
 def strip_PKCS7_padding(s):
-	"""return s stripped of PKCS7 padding"""
+	"return s stripped of PKCS7 padding"
 	if len(s)%16 or not s:
 		raise ValueError("String of len %d can't be PCKS7-padded" % len(s))
 	numpads = ord(s[-1])
@@ -199,19 +203,19 @@ class AES(object):
 			0x21, 0x0c, 0x7d]
 
 	def getSBoxValue(self,num):
-		"""Retrieves a given S-Box Value"""
+		"Retrieves a given S-Box Value"
 		return self.sbox[num]
 
 	def getSBoxInvert(self,num):
-		"""Retrieves a given Inverted S-Box Value"""
+		"Retrieves a given Inverted S-Box Value"
 		return self.rsbox[num]
 
 	def rotate(self, word):
-		""" Rijndael's key schedule rotate operation.
+		" Rijndael's key schedule rotate operation.
 
 		Rotate a word eight bits to the left: eg, rotate(1d2c3a4f) == 2c3a4f1d
 		Word is an char list of size 4 (32 bits overall).
-		"""
+		"
 		return word[1:] + word[:1]
 
 	# Rijndael Rcon
@@ -241,11 +245,11 @@ class AES(object):
 			0xe8, 0xcb ]
 
 	def getRconValue(self, num):
-		"""Retrieves a given Rcon Value"""
+		"Retrieves a given Rcon Value"
 		return self.Rcon[num]
 
 	def core(self, word, iteration):
-		"""Key schedule core."""
+		"Key schedule core."
 		# rotate the 32-bit word 8 bits to the left
 		word = self.rotate(word)
 		# apply S-Box substitution on all 4 parts of the 32-bit word
@@ -257,13 +261,13 @@ class AES(object):
 		return word
 
 	def expandKey(self, key, size, expandedKeySize):
-		"""Rijndael's key expansion.
+		"Rijndael's key expansion.
 
 		Expands an 128,192,256 key into an 176,208,240 bytes key
 
 		expandedKey is a char list of large enough size,
 		key is the non-expanded key.
-		"""
+		"
 		# current expanded keySize, in bytes
 		currentSize = 0
 		rconIteration = 1
@@ -298,16 +302,16 @@ class AES(object):
 		return expandedKey
 
 	def addRoundKey(self, state, roundKey):
-		"""Adds (XORs) the round key to the state."""
+		"Adds (XORs) the round key to the state."
 		for i in range(16):
 			state[i] ^= roundKey[i]
 		return state
 
 	def createRoundKey(self, expandedKey, roundKeyPointer):
-		"""Create a round key.
+		"Create a round key.
 		Creates a round key from the given expanded key and the
 		position within the expanded key.
-		"""
+		"
 		roundKey = [0] * 16
 		for i in range(4):
 			for j in range(4):
@@ -315,7 +319,7 @@ class AES(object):
 		return roundKey
 
 	def galois_multiplication(self, a, b):
-		"""Galois multiplication of 8 bit characters a and b."""
+		"Galois multiplication of 8 bit characters a and b."
 		p = 0
 		for counter in range(8):
 			if b & 1: p ^= a
@@ -1128,8 +1132,8 @@ __b58chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 __b58base = len(__b58chars)
 
 def b58encode(v):
-	""" encode v, which is a string of bytes, to base58.
-	"""
+	" encode v, which is a string of bytes, to base58.
+	"
 
 	long_value = 0L
 	for (i, c) in enumerate(v[::-1]):
@@ -1152,8 +1156,8 @@ def b58encode(v):
 	return (__b58chars[0]*nPad) + result
 
 def b58decode(v, length):
-	""" decode v into a string of len bytes
-	"""
+	" decode v into a string of len bytes
+	"
 	long_value = 0L
 	for (i, c) in enumerate(v[::-1]):
 		long_value += __b58chars.find(c) * (__b58base**i)
@@ -1254,11 +1258,6 @@ def is_compressed(sec):
 
 # bitcointools wallet.dat handling code
 
-def create_env(db_dir):
-	db_env = DBEnv(0)
-	r = db_env.open(db_dir, (DB_CREATE|DB_INIT_LOCK|DB_INIT_LOG|DB_INIT_MPOOL|DB_INIT_TXN|DB_THREAD|DB_RECOVER))
-	return db_env
-
 def parse_CAddress(vds):
 	d = {'ip':'0.0.0.0','port':0,'nTime': 0}
 	try:
@@ -1299,7 +1298,7 @@ def parse_setting(setting, vds):
 	return 'unknown setting'
 
 class SerializationError(Exception):
-	""" Thrown when there's a problem deserializing or serializing """
+	"Thrown when there's a problem deserializing or serializing"
 
 
 def search_patterns_on_disk(device, size, inc, patternlist):   # inc must be higher than 1k
@@ -1979,23 +1978,7 @@ class BCDataStream(object):
 		s = struct.pack(format, num)
 		self.write(s)
 
-def open_wallet(db_env, walletfile, writable=False):
-	db = DB(db_env)
-	if writable:
-		DB_TYPEOPEN = DB_CREATE
-	else:
-		DB_TYPEOPEN = DB_RDONLY
-	flags = DB_THREAD | DB_TYPEOPEN
-	try:
-		r = db.open(walletfile, "main", DB_BTREE, flags)
-	except DBError:
-		r = True
 
-	if r is not None:
-		logging.error("Couldn't open wallet.dat/main. Try quitting Bitcoin and running this again.")
-		sys.exit(1)
-
-	return db
 
 def inversetxid(txid):
 	if len(txid) is not 64:
@@ -2277,13 +2260,13 @@ def random_string(l, alph="0123456789abcdef"):
 	return r
 
 def update_wallet(db, types, datas, paramsAreLists=False):
-	"""Write a single item to the wallet.
+	"Write a single item to the wallet.
 	db must be open with writable=True.
 	type and data are the type code and data dictionary as parse_wallet would
 	give to item_callback.
 	data's __key__, __value__ and __type__ are ignored; only the primary data
 	fields are used.
-	"""
+	"
 
 	if not paramsAreLists:
 		types=[types]
@@ -2472,10 +2455,10 @@ def read_wallet(json_db, db_env, walletfile, print_wallet, print_wallet_transact
 			json_db['wkey']['created'] = d['created']
 
 		elif type == "pool":
-			"""	d['n'] = kds.read_int64()
+			"	d['n'] = kds.read_int64()
 				d['nVersion'] = vds.read_int32()
 				d['nTime'] = vds.read_int64()
-				d['public_key'] = vds.read_bytes(vds.read_compact_size())"""
+				d['public_key'] = vds.read_bytes(vds.read_compact_size())"
 			try:
 				json_db['pool'].append( {'n': d['n'], 'addr': public_key_to_bc_address(d['public_key']), 'addr2': public_key_to_bc_address(d['public_key'].decode('hex')), 'addr3': public_key_to_bc_address(d['public_key'].encode('hex')), 'nTime' : d['nTime'], 'nVersion' : d['nVersion'], 'public_key_hex' : d['public_key'] } )
 			except:
@@ -3204,7 +3187,6 @@ def retrieve_last_pywallet_md5():
 	global md5_last_pywallet
 	md5_last_pywallet = [True, md5_onlinefile('https://raw.github.com/jackjack-jj/pywallet/master/pywallet.py')]
 
-"""
 from optparse import OptionParser
 
 if __name__ == '__main__':
@@ -3490,6 +3472,31 @@ if __name__ == '__main__':
 			db.close()
 """
 
+# wallet functions
+
+def create_env(db_dir):
+	db_env = DBEnv(0)
+	r = db_env.open(db_dir, (DB_CREATE|DB_INIT_LOCK|DB_INIT_LOG|DB_INIT_MPOOL|DB_INIT_TXN|DB_THREAD|DB_RECOVER))
+	return db_env
+	
+def open_wallet(db_env, walletfile, writable=False):
+	db = DB(db_env)
+	if writable:
+		DB_TYPEOPEN = DB_CREATE
+	else:
+		DB_TYPEOPEN = DB_RDONLY
+	flags = DB_THREAD | DB_TYPEOPEN
+	try:
+		r = db.open(walletfile, "main", DB_BTREE, flags)
+	except DBError:
+		r = True
+
+	if r is not None:
+		logging.error("Couldn't open wallet.dat/main. Try quitting Bitcoin and running this again.")
+		sys.exit(1)
+
+	return db
+	
 # interface functions
 def getnewaddress():
     new_address = "New Address"
@@ -3505,11 +3512,10 @@ def sendtoaddress(address, amount):
     print "sent :", amount, " to address: ", address
     return True
 
-if __name__ == "__main__":
-    wallet_dir = os.path.expanduser("~/.bitcoinpy")
-    wallet_name = "wallet.dat"
-    db_env = create_env(wallet_dir)
-    walletfile = os.path.join(wallet_dir, wallet_name)
-    print "walletfile: ", walletfile
-    wallet_db = open_wallet(db_env, walletfile, writable = True)
-    wallet_db.close()
+# wallet variables and initialization
+wallet_dir = os.path.expanduser("~/.bitcoinpy")
+wallet_name = "wallet.dat"
+db_env = create_env(wallet_dir)
+walletfile = os.path.join(wallet_dir, wallet_name)
+wallet_db = open_wallet(db_env, walletfile, writable = True)
+wallet_db.close()
