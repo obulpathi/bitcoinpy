@@ -6,4 +6,4 @@ new:
 	touch ~/.bitcoinpy/blocks.dat
 	python bitcoinpy.py config.cfg
 install:
-	sudo apt-get install python-gevent libleveldb1 python-leveldb 
+	sudo apt-get install python-gevent libleveldb1 python-leveldb python-bsddb3 

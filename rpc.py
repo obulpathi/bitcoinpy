@@ -30,6 +30,7 @@ VALID_RPCS = {
     "getrawtransaction",
     "getreceivedbyaddress",
     "getwork",
+    "sendtoaddress",
     "submitblock",
     "help",
     "stop",
@@ -107,7 +108,7 @@ class RPCExec(object):
         return (s, None)
 
     def getbalance(self, params):
-        return (self.chaindb.getbalance(params[0]), None)
+        return (wallet.getbalance(params[0]), None)
 
     def getblock(self, params):
         err = { "code" : -1, "message" : "invalid params" }
@@ -259,6 +260,9 @@ class RPCExec(object):
             return self.getwork_new()
         else:
             return (None, err)
+
+    def sendtoaddress(self, params):
+        return (wallet.sendtoaddress(params[0], params[1]), None)
 
     def submitblock(self, params):
         err = { "code" : -1, "message" : "invalid params" }
