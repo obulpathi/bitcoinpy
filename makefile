@@ -1,6 +1,9 @@
 all:
 	python bitcoinpy.py config.cfg
 
+wallet:
+	python wallet.py
+
 new:
 	rm -rf ~/.bitcoinpy/*
 	mkdir -p ~/.bitcoinpy/leveldb

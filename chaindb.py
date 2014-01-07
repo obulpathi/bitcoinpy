@@ -161,7 +161,15 @@ class ChainDb(object):
                     if txout.scriptPubKey[:-2] == address:
                         balance = balance + txout.nValue
         return balance
-
+    """ Merge into getbalance
+    # scan the blocks for transactions to this address
+    chain_height = 10
+    for index in range(height, chain_height):
+        received, sent = scan_block(index, address)
+        balabce = balance + received - sent
+    if height < chain_height:
+    """
+    
     def gettxidx(self, txhash):
         ser_txhash = ser_uint256(txhash)
         try:
