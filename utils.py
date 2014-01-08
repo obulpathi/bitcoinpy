@@ -76,6 +76,14 @@ def address_to_public_key_hash(address):
     hash160_address = extended_address[1:]
     return hash160_address
 
+def output_script_to_public_key_hash(script):
+    script_key_hash = binascii.hexlify(myhash160(bytearray.fromhex(binascii.hexlify(script[1:-1]))))
+    return script_key_hash
+
+
+def address_to_output_script(address):
+    pass
+
 if __name__ == "__main__":
     address1 = "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM"
     address2 = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"

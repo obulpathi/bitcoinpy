@@ -205,6 +205,9 @@ class RPCExec(object):
             self.work_blocks = {}
 
         block = self.chaindb.newblock()
+        print "hashMerkleRoot: ", block.hashMerkleRoot
+        print "Block: ", block
+
         if block is None:
             ret = {}
             print "no block!"

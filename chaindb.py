@@ -10,6 +10,7 @@ import io
 import os
 import time
 import utils
+import binascii
 from decimal import Decimal
 from cache import Cache
 from bitcoin.serialize import *
@@ -156,12 +157,10 @@ class ChainDb(object):
                 print "\ttransaction: ", tx
                 for txout in tx.vout:
                     print "\t\ttxout: ", txout
-                    #print "\t\tscript: ", txout.scriptPubKey
+                    print "\t\tscript: ", binascii.hexlify(txout.scriptPubKey)
                     print "\t\taddress: ", address
-                    script = binascii.hexlify(txout.scriptPubKey[1:-1])
-                    script_key_hash = binascii.hexlify(utils.myhash160(bytearray.fromhex(script)))
+                    script_key_hash = utils.output_script_to_public_key_hash(txout.scriptPubKey)
                     public_key_hash = binascii.hexlify(utils.address_to_public_key_hash(address))
-                    print "\t\tScript: ", script
                     print "\t\tscript_key_hash: ", script_key_hash
                     print "\t\tpublic_key_hash: ", public_key_hash
                     if script_key_hash == public_key_hash:
@@ -807,11 +806,13 @@ class ChainDb(object):
         # build coinbase
         txin = CTxIn()
         txin.prevout.set_null()
-        txin.scriptSig = "" # FIXME
+        # FIXME
+        txin.coinbase = "COINBASE TX"
 
         txout = CTxOut()
         txout.nValue = block_value(self.getheight(), total_fees)
-        txout.scriptPubKey = "" # FIXME
+        # FIXME: public key corresponding to address "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM"
+        txout.scriptPubKey = binascii.unhexlify("410450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B23522CD470243453A299FA9E77237716103ABC11A1DF38855ED6F2EE187E9C582BA6AC")
 
         coinbase = CTransaction()
         coinbase.vin.append(txin)
