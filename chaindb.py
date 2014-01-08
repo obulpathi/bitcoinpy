@@ -9,6 +9,7 @@ import leveldb
 import io
 import os
 import time
+import utils
 from decimal import Decimal
 from cache import Cache
 from bitcoin.serialize import *
@@ -155,11 +156,18 @@ class ChainDb(object):
                 print "\ttransaction: ", tx
                 for txout in tx.vout:
                     print "\t\ttxout: ", txout
-                    print "\t\tscript: ", txout.scriptPubKey
+                    #print "\t\tscript: ", txout.scriptPubKey
                     print "\t\taddress: ", address
-                    balance = balance + 1
-                    if txout.scriptPubKey[:-2] == address:
+                    script = binascii.hexlify(txout.scriptPubKey[1:-1])
+                    script_key_hash = binascii.hexlify(utils.myhash160(bytearray.fromhex(script)))
+                    public_key_hash = binascii.hexlify(utils.address_to_public_key_hash(address))
+                    print "\t\tScript: ", script
+                    print "\t\tscript_key_hash: ", script_key_hash
+                    print "\t\tpublic_key_hash: ", public_key_hash
+                    if script_key_hash == public_key_hash:
                         balance = balance + txout.nValue
+                    else:
+                        print binascii.hexlify(utils.address_to_public_key_hash(address))
         return balance
     """ Merge into getbalance
     # scan the blocks for transactions to this address
@@ -667,7 +675,7 @@ class ChainDb(object):
         return uint256_from_str(self.db.Get('misc:tophash'))
 
     def loadfile(self, filename):
-        fd = os.open("genesis.dat", os.O_RDONLY)
+        fd = os.open(filename, os.O_RDONLY)
         self.log.write("IMPORTING DATA FROM " + filename)
         buf = ''
         wanted = 4096
@@ -706,6 +714,8 @@ class ChainDb(object):
             f = cStringIO.StringIO(ser_blk)
             block = CBlock()
             block.deserialize(f)
+            import tmp
+            tmp.foo(block) # remove me
             print("adding the genesis block")
             self.putblock(block)
 

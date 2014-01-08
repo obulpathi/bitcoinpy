@@ -9,9 +9,10 @@ import os
 import sys
 import time
 import cStringIO
+
 from log import Log
 from mempool import MemPool
-from chaindb import ChainDb
+from chaindb import ChainDb, HeightIdx
 
 from bitcoin.coredefs import NETWORKS
 from bitcoin.core import CBlock
@@ -19,14 +20,14 @@ from bitcoin.serialize import ser_uint256
 from bitcoin.scripteval import VerifySignature
 
 NET_SETTINGS = {
-	'mainnet' : {
-		'log' : 'testscript.log',
-		'db' : '/spare/tmp/chaindb'
-	},
-	'testnet3' : {
-		'log' : '/spare/tmp/testtestscript.log',
-		'db' : '/spare/tmp/chaintest'
-	}
+    'mainnet' : {
+        'log' : 'testscript.log',
+        'db' : '/spare/tmp/chaindb'
+    },
+    'testnet3' : {
+        'log' : '/spare/tmp/testtestscript.log',
+        'db' : '/spare/tmp/chaintest'
+    }
 }
 
 MY_NETWORK = 'mainnet'
@@ -36,11 +37,11 @@ SETTINGS = NET_SETTINGS[MY_NETWORK]
 start_height = 0
 end_height = -1
 if len(sys.argv) > 1:
-	start_height = int(sys.argv[1])
+    start_height = int(sys.argv[1])
 if len(sys.argv) > 2:
-	end_height = int(sys.argv[2])
+    end_height = int(sys.argv[2])
 if len(sys.argv) > 3:
-	SETTINGS['log'] = sys.argv[3]
+    SETTINGS['log'] = sys.argv[3]
 
 datadir = "~/.bitcoinpy"
 datadir = os.path.expanduser(datadir)
@@ -50,7 +51,7 @@ chaindb = ChainDb(SETTINGS['db'], datadir, log, mempool, NETWORKS[MY_NETWORK], T
 chaindb.blk_cache.max = 500
 
 if end_height < 0 or end_height > chaindb.getheight():
-	end_height = chaindb.getheight()
+    end_height = chaindb.getheight()
 
 scanned = 0
 scanned_tx = 0
@@ -61,60 +62,62 @@ SKIP_TX = {}
 
 
 def scan_tx(tx):
-	tx.calc_sha256()
+    tx.calc_sha256()
 
-	if tx.sha256 in SKIP_TX:
-		return True
+    if tx.sha256 in SKIP_TX:
+        return True
 
-#	log.write("...Scanning TX %064x" % (tx.sha256,))
-	for i in xrange(len(tx.vin)):
-		txin = tx.vin[i]
-		txfrom = chaindb.gettx(txin.prevout.hash)
-		if not VerifySignature(txfrom, tx, i, 0):
-			log.write("TX %064x/%d failed" % (tx.sha256, i))
-			log.write("FROMTX %064x" % (txfrom.sha256,))
-			log.write(txfrom.__repr__())
-			log.write("TOTX %064x" % (tx.sha256,))
-			log.write(tx.__repr__())
-			return False
-	return True
+#   log.write("...Scanning TX %064x" % (tx.sha256,))
+    for i in xrange(len(tx.vin)):
+        txin = tx.vin[i]
+        txfrom = chaindb.gettx(txin.prevout.hash)
+        if not VerifySignature(txfrom, tx, i, 0):
+            log.write("TX %064x/%d failed" % (tx.sha256, i))
+            log.write("FROMTX %064x" % (txfrom.sha256,))
+            log.write(txfrom.__repr__())
+            log.write("TOTX %064x" % (tx.sha256,))
+            log.write(tx.__repr__())
+            return False
+    return True
 
-for height in xrange(end_height):
-	if height < start_height:
-		continue
-	heightidx = ChainDb.HeightIdx()
-	heightidx.deserialize(chaindb.height[str(height)])
+for height in xrange(1):
+# for height in xrange(end_height):
+    if height < start_height:
+        continue
+    heightidx = HeightIdx()
+    heightidx.deserialize(str(height))
 
-	blkhash = heightidx.blocks[0]
-	ser_hash = ser_uint256(blkhash)
+    blkhash = heightidx.blocks[0]
+    ser_hash = ser_uint256(blkhash)
 
-	f = cStringIO.StringIO(chaindb.blocks[ser_hash])
-	block = CBlock()
-	block.deserialize(f)
+    f = cStringIO.StringIO(chaindb.getblock(ser_hash))
+    block = CBlock()
+    block.deserialize(f)
 
-	start_time = time.time()
+    start_time = time.time()
 
-	for tx_tmp in block.vtx:
-		if tx_tmp.is_coinbase():
-			continue
+    for tx_tmp in block.vtx:
+        if tx_tmp.is_coinbase():
+            print "Tx is coinbase"
+            continue
 
-		scanned_tx += 1
+        scanned_tx += 1
 
-		if not scan_tx(tx_tmp):
-			failures += 1
-			sys.exit(1)
+        if not scan_tx(tx_tmp):
+            failures += 1
+            sys.exit(1)
 
-	end_time = time.time()
+    end_time = time.time()
 
-	scanned += 1
-#	if (scanned % 1000) == 0:
-	log.write("Scanned %d tx, height %d (%d failures), %.2f sec" % (
-		scanned_tx, height, failures, end_time - start_time))
+    scanned += 1
+#   if (scanned % 1000) == 0:
+    log.write("Scanned %d tx, height %d (%d failures), %.2f sec" % (
+        scanned_tx, height, failures, end_time - start_time))
 
 
 log.write("Scanned %d tx, %d blocks (%d failures)" % (
-	scanned_tx, scanned, failures))
+    scanned_tx, scanned, failures))
 
 #for k,v in opcount.iteritems():
-#	print k, v
+#   print k, v
 

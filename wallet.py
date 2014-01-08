@@ -3673,6 +3673,7 @@ def scan_block(index, address):
     return 1.0
 
 def getbalance(account):
+    """
     walletdb = open_wallet(db_env, walletfile, writable = True)
     # get account
     accountinfo = loads(walletdb[account])
@@ -3686,12 +3687,13 @@ def getbalance(account):
     print "\tPrivate key: ", private_key
     print "\tAddress: ", address
     print "\tBalance: ", balance
-
+    """
     # get chaindb from bitcoinpy
     balance = chaindb.getbalance(address)
+    """
     walletdb[account] = dumps({"public_key": "Public key", "private_key": private_key, "address": address, "balance": balance, "height" : height})
     walletdb.close()
-    
+    """
     return balance
 
 def sendtoaddress(address, amount):
