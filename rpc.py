@@ -15,6 +15,7 @@ import itertools
 
 import chaindb
 import wallet
+from bitcoin.core import CBlock
 import bitcoin.coredefs
 from bitcoin.serialize import uint256_from_compact
 
@@ -196,6 +197,7 @@ class RPCExec(object):
         return (0.0, None)
 
     def getwork_new(self):
+        print("get work new called >>>>>>>>>>>>>>>>")
         err = { "code" : -6, "message" : "internal error" }
         tmp_top = self.chaindb.gettophash()
         print "tmp_hash: ", tmp_top
@@ -218,6 +220,7 @@ class RPCExec(object):
 
         target = uint256_from_compact(block.nBits)
         res['target'] = "%064x" % (target,)
+        res['target'] = "00000000000000000000000000000000000000000000000000000000ffff0000" # FIXME
 
         data = block.serialize()
         data = data[:80]
@@ -230,6 +233,7 @@ class RPCExec(object):
         return (res, None)
 
     def getwork_submit(self, hexstr):
+        print("get work submit called >>>>>>>>>>>>>>>>")
         data = hexstr.decode('hex')
         if len(data) != 128:
             err = { "code" : -5, "message" : "invalid data" }
@@ -237,7 +241,9 @@ class RPCExec(object):
 
         data = bufreverse(data)
         blkhdr = data[:80]
-        f = cStringIO.StringIO(blkhdr)
+        # why are we passing blkheader for constructing block, should not we pass the whole block"
+        # f = cStringIO.StringIO(blkhdr)
+        f = cStringIO.StringIO(data)
         block_tmp = CBlock()
         block_tmp.deserialize(f)
 
@@ -253,6 +259,7 @@ class RPCExec(object):
         return (res, None)
 
     def getwork(self, params):
+        print("get work called >>>>>>>>>>>>>>>>")
         err = { "code" : -1, "message" : "invalid params" }
         if len(params) == 1:
             if (not isinstance(params[0], str) and
@@ -268,6 +275,7 @@ class RPCExec(object):
         return (wallet.sendtoaddress(params[0], params[1]), None)
 
     def submitblock(self, params):
+        print("submit block called >>>>>>>>>>>>>>>>")
         err = { "code" : -1, "message" : "invalid params" }
         if (len(params) != 1 or
             (not isinstance(params[0], str) and
