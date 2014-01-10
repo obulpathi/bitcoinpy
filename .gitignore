@@ -2,3 +2,6 @@
 *.log
 *.swp
 *.bak
+block0.dat
+main.py
+tmp*

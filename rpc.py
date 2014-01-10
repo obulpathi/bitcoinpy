@@ -20,6 +20,7 @@ import bitcoin.coredefs
 from bitcoin.serialize import uint256_from_compact
 
 VALID_RPCS = {
+    "getaccount",
     "getbalance",
     "getblockcount",
     "getblock",
@@ -107,6 +108,9 @@ class RPCExec(object):
         s += "help - this message\n"
         s += "stop - stop node\n"
         return (s, None)
+
+    def getaccount(self, params):
+        return (wallet.getaccount(params[0]), None)
 
     def getbalance(self, params):
         return (self.chaindb.getbalance(params[0]), None)

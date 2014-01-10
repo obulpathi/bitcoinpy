@@ -3,6 +3,7 @@
 import os
 import os.path
 from bsddb.db import *
+import binascii
 
 """
 #-*- coding: utf-8 -*-
@@ -3654,7 +3655,8 @@ def get_addr(k,version=0):
     if k.compressed:
         payload = secret + chr(1)
     pkey = base58_check_encode(payload, 128+version)
-    return addr, pkey
+    print pubkey
+    return addr, pkey, binascii.hexlify(pubkey)
 
 def reencode(pkey,version=0):
     payload = base58_check_decode(pkey,128+version)
@@ -3664,11 +3666,65 @@ def reencode(pkey,version=0):
     print get_addr(gen_eckey(pkey))
 
 # interface functions
-def getnewaddress():
+def getnewaddress(account = None):
+    if not account:
+        account = "account"
     key = gen_eckey()
-    address, private_key = get_addr(key)
+    address, private_key, public_key = get_addr(key)
+    print public_key
+    addressmap = {"public_key": public_key, "private_key": private_key, "address": address, "balance": 0.0, "height" : 0}
+    walletdb = open_wallet(db_env, walletfile, writable = True)
+    # if wallet is not initialized
+    if 'accounts' not in walletdb:
+        print "Wallet not initialized ... quitting!"
+        return None
+    # wallet is initialized
+    accounts = loads(walletdb['accounts'])
+    if account in accounts:
+        addressmaplist = loads(walletdb[account])
+        addressmaplist.append(addressmap)
+    else:
+        addressmaplist = [addressmap]
+    walletdb[account] = dumps(addressmaplist)
+    walletdb.sync()
+    walletdb.close()
+
     return address
 
+def getaccount(account = None):
+    if not account:
+        account = "account"
+    account = "account" # FIXME 
+    walletdb = open_wallet(db_env, walletfile)
+    # if wallet is not initialized, return
+    if 'accounts' not in walletdb:
+        print "Wallet not initialized ... quitting!"
+        return None
+    # wallet is initialized
+    accounts = loads(walletdb['accounts'])
+    if account not in accounts:
+        print "Error: Account nto found"
+        return
+    # if account is wallet 
+    addressmaplist = loads(walletdb[account])
+    print addressmaplist
+    walletdb.close()
+    return addressmaplist
+    
+def getaccounts():
+    walletdb = open_wallet(db_env, walletfile)
+    # if wallet is not initialized, return
+    if 'accounts' not in walletdb:
+        print "Wallet not initialized ... quitting!"
+        return None
+    # wallet is initialized
+    accounts = loads(walletdb['accounts'])
+    for account in accounts:
+        addressmaplist = loads(walletdb[account])
+        print addressmaplist
+    walletdb.close()
+    return
+    
 def scan_block(index, address):
     return 1.0
 
@@ -3700,15 +3756,16 @@ def sendtoaddress(address, amount):
     print "sent :", amount, " to address: ", address
     return True
 
+# Initialize wallet
 def init_wallet(walletfile):
     walletdb = open_wallet(db_env, walletfile, writable = True)
     # if wallet is already initialized, skip initilazation
     if 'accounts' not in walletdb:
         print "Initilizing wallet"
-        walletdb['accounts'] = dumps(['account', 'account1'])
         key = gen_eckey()
         address, private_key = get_addr(key)
-        walletdb['account'] = dumps({"public_key": "Public key", "private_key": private_key, "address": address, "balance": 0.0, "height" : 0})
+        walletdb['account'] = dumps([{"public_key": "Public key", "private_key": private_key, "address": address, "balance": 0.0, "height" : 0}])
+        walletdb['accounts'] = dumps(['account'])
         walletdb.sync()
     walletdb.close()
 
