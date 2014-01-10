@@ -13,6 +13,8 @@ import utils
 import binascii
 from decimal import Decimal
 from cache import Cache
+import wallet
+
 from bitcoin.serialize import *
 from bitcoin.core import *
 from bitcoin.messages import msg_block, message_to_str, message_read
@@ -176,7 +178,41 @@ class ChainDb(object):
         balabce = balance + received - sent
     if height < chain_height:
     """
-    
+   
+    def sendtoaddress(self, fromaddress, toaddress, amount):
+        print "chain db passing to wallt"
+        tx = wallet.sendtoaddress(fromaddress, toaddress, amount)
+        print "wallet returned the tx to chaindb"
+        self.mempool.add(tx)
+        print "Added to memopool >>>>>>>>>>>>>>>>>>>>>>>>>."
+
+    def listreceivedbyaddress(self, address):
+        end_height = self.getheight()
+        for height in xrange(end_height):
+            data = self.db.Get('height:' + str(height))
+            # print "data at height: ", height, data
+            heightidx = HeightIdx()
+            heightidx.deserialize(data)
+            blkhash = heightidx.blocks[0]
+            # ser_hash = ser_uint256(blkhash)
+            
+            #f = cStringIO.StringIO(self.getblock(ser_hash))
+            # f = cStringIO.StringIO(self.getblock(blkhash))
+            # block = CBlock()
+            # block.deserialize(f)
+            block = self.getblock(blkhash)
+            # print "block: ", block
+            
+            for tx in block.vtx:
+                for txout in tx.vout:
+                    script_key_hash = utils.output_script_to_public_key_hash(txout.scriptPubKey)
+                    public_key_hash = binascii.hexlify(utils.address_to_public_key_hash(address))
+                    if script_key_hash == public_key_hash:
+                        print "\ttransaction: ", tx
+                        tx.calc_sha256()
+                        print "\tSHA256: ", tx.sha256
+        return "Printed"
+
     def gettxidx(self, txhash):
         ser_txhash = ser_uint256(txhash)
         try:

@@ -32,6 +32,7 @@ VALID_RPCS = {
     "getrawtransaction",
     "getreceivedbyaddress",
     "getwork",
+    "listreceivedbyaddress",
     "sendtoaddress",
     "submitblock",
     "help",
@@ -275,8 +276,12 @@ class RPCExec(object):
         else:
             return (None, err)
 
+    def listreceivedbyaddress(self, params):
+        return (self.chaindb.listreceivedbyaddress(params[0]), None)
+
     def sendtoaddress(self, params):
-        return (wallet.sendtoaddress(params[0], params[1]), None)
+        print("RPC: sending to chaindb")
+        return (self.chaindb.sendtoaddress(params[0], params[1], params[2]), None)
 
     def submitblock(self, params):
         print("submit block called >>>>>>>>>>>>>>>>")

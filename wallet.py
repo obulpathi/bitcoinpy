@@ -4,6 +4,7 @@ import os
 import os.path
 from bsddb.db import *
 import binascii
+from bitcoin.core import COutPoint, CTxIn, CTxOut, CTransaction
 
 """
 #-*- coding: utf-8 -*-
@@ -3752,9 +3753,23 @@ def getbalance(account):
     """
     return balance
 
-def sendtoaddress(address, amount):
-    print "sent :", amount, " to address: ", address
-    return True
+def sendtoaddress(fromaddress, toaddress, amount):
+    print "sending: ", amount, "from address: ", fromaddress, " to address: ", toaddress
+    txin = CTxIn()
+    txin.prevout = COutPoint()
+    # fix the address hardcoding
+    txin.prevout.hash = 102036534123695066960262520358268546962206412441328032747133253249363145533949
+    txin.prevout.n = 0
+    txin.scriptSig = binascii.unhexlify("41046f5ec7490d5eae8e9fda546f6f6ebd1e975d7819de26ab6e581709609d7830662633d155c70c0430b09bb86421467958fb8648ec5ab3b37e3e5d6bc1bbba5368ac")
+    # FIXME: FIX the adderss hardcoding stuff ... and also a block needs to be mined too ... for balance check
+    txout = CTxOut()
+    txout.nValue = 2
+    print "TXOUT: ", txout.nValue, type(txout.nValue)
+    txout.scriptPubKey = binascii.unhexlify("410450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B23522CD470243453A299FA9E77237716103ABC11A1DF38855ED6F2EE187E9C582BA6AC")
+    tx = CTransaction()
+    tx.vin.append(txin)
+    tx.vout.append(txout)
+    return tx
 
 # Initialize wallet
 def init_wallet(walletfile):
