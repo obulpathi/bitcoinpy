@@ -80,18 +80,20 @@ if __name__ == '__main__':
     netmagic = NETWORKS[chain]
 
     datadir = settings['db']
+    new_install = False
     # if datadir is not there, create and initialize
     if not os.path.isdir(datadir):
+        new_install = True
         os.mkdir(datadir)
         os.mkdir(datadir + '/leveldb')
         # create blocks.dat file
-        shutil.copy('genesis.dat', 'blocks.dat')
+        shutil.copy('genesis.dat', os.path.join(datadir + '/blocks.dat'))
+        print os.path.join(datadir + '/blocks.dat')
         # create lock file for db
-        with open(datadir + '__db.001', 'a'):
+        with open(datadir + '/__db.001', 'a'):
             pass
         # initialize wallet
         wallet.init_wallet(wallet.walletfile)
-
 
     mempool = MemPool(log)
     chaindb = ChainDb(settings, settings['db'], log, mempool, netmagic, False, False)
@@ -99,6 +101,10 @@ if __name__ == '__main__':
     peermgr = PeerManager(node, log, mempool, chaindb, netmagic)
     node.peermgr = peermgr
 
+    # load blocks.dat into db, if db is newly created
+    if new_install:
+        chaindb.loadfile(datadir + '/blocks.dat')
+    
     if 'loadblock' in settings:
         chaindb.loadfile(settings['loadblock'])
 
