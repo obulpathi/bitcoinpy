@@ -11,8 +11,10 @@ import os
 import time
 import utils
 import binascii
+import shutil
 from decimal import Decimal
 from cache import Cache
+
 import wallet
 
 from bitcoin.serialize import *
@@ -121,7 +123,6 @@ class ChainDb(object):
 
     def puttxidx(self, txhash, txidx, batch=None):
         ser_txhash = ser_uint256(txhash)
-
 
         try:
             self.db.Get('tx:'+ser_txhash)
@@ -847,9 +848,14 @@ class ChainDb(object):
 
         txout = CTxOut()
         txout.nValue = block_value(self.getheight(), total_fees)
+        address = wallet.getnewaddress()
+        txout.scriptPubKey = utils.address_to_pay_to_script_hash(address)
+        print "address: ", address
+        print "public key: ", binascii.hexlify(utils.address_to_public_key_hash(address))
+        print "scriptPubKey: ", binascii.hexlify(txout.scriptPubKey)
         #txout.scriptPubKey = binascii.unhexlify("410450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B23522CD470243453A299FA9E77237716103ABC11A1DF38855ED6F2EE187E9C582BA6AC")
         # FIXME: public key corresponding to address "1JhvTbFh4tF5MWx3w8v938YmsXV5CeaKYp"
-        txout.scriptPubKey = binascii.unhexlify("41046f5ec7490d5eae8e9fda546f6f6ebd1e975d7819de26ab6e581709609d7830662633d155c70c0430b09bb86421467958fb8648ec5ab3b37e3e5d6bc1bbba5368ac")
+        #txout.scriptPubKey = binascii.unhexlify("41046f5ec7490d5eae8e9fda546f6f6ebd1e975d7819de26ab6e581709609d7830662633d155c70c0430b09bb86421467958fb8648ec5ab3b37e3e5d6bc1bbba5368ac")
 
         coinbase = CTransaction()
         coinbase.vin.append(txin)

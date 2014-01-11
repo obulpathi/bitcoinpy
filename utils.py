@@ -76,6 +76,16 @@ def address_to_public_key_hash(address):
     hash160_address = extended_address[1:]
     return hash160_address
 
+def address_to_pay_to_script_hash(address):
+    hash160_address = address_to_public_key_hash(address)
+    script = "41" + binascii.hexlify(hash160_address) + "AC"
+    print "Script", script
+    return binascii.unhexlify(script)
+
+def address_to_pay_to_pubkey_hash(address):
+    print "Not implemented >>>>>>>>>>>>>>>>>>>"
+    exit(0)
+
 def output_script_to_public_key_hash(script):
     script_key_hash = binascii.hexlify(myhash160(bytearray.fromhex(binascii.hexlify(script[1:-1]))))
     return script_key_hash

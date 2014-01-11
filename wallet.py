@@ -3685,11 +3685,11 @@ def getnewaddress(account = None):
         addressmaplist = loads(walletdb[account])
         addressmaplist.append(addressmap)
     else:
+        print "account: ", account, " not in accounts" 
         addressmaplist = [addressmap]
     walletdb[account] = dumps(addressmaplist)
     walletdb.sync()
     walletdb.close()
-
     return address
 
 def getaccount(account = None):
@@ -3773,19 +3773,20 @@ def sendtoaddress(fromaddress, toaddress, amount):
 
 # Initialize wallet
 def init_wallet(walletfile):
-    walletdb = open_wallet(db_env, walletfile, writable = True)
-    # if wallet is already initialized, skip initilazation
-    if 'accounts' not in walletdb:
+    db_env = create_env(wallet_dir)
+    # if wallet does not exist, create it
+    if not os.path.isfile(walletfile):
+        walletdb = open_wallet(db_env, walletfile, writable = True)
         print "Initilizing wallet"
         key = gen_eckey()
-        address, private_key = get_addr(key)
-        walletdb['account'] = dumps([{"public_key": "Public key", "private_key": private_key, "address": address, "balance": 0.0, "height" : 0}])
+        address, private_key, public_key = get_addr(key)
+        walletdb['account'] = dumps([{"public_key": public_key, "private_key": private_key, "address": address, "balance": 0.0, "height" : 0}])
         walletdb['accounts'] = dumps(['account'])
         walletdb.sync()
-    walletdb.close()
+        walletdb.close()
 
 # initilization functions
-db_env = create_env(wallet_dir)
+db_env = ""
 walletfile = os.path.join(wallet_dir, wallet_name)
 walletdb = None
-init_wallet(walletfile)
+#init_wallet(walletfile)

@@ -19,8 +19,10 @@ import re
 import random
 import cStringIO
 import copy
+import shutil
 
 import rpc
+import wallet
 from log import Log
 from node import Node
 from mempool import MemPool
@@ -76,6 +78,20 @@ if __name__ == '__main__':
         sys.exit(1)
 
     netmagic = NETWORKS[chain]
+
+    datadir = settings['db']
+    # if datadir is not there, create and initialize
+    if not os.path.isdir(datadir):
+        os.mkdir(datadir)
+        os.mkdir(datadir + '/leveldb')
+        # create blocks.dat file
+        shutil.copy('genesis.dat', 'blocks.dat')
+        # create lock file for db
+        with open(datadir + '__db.001', 'a'):
+            pass
+        # initialize wallet
+        wallet.init_wallet(wallet.walletfile)
+
 
     mempool = MemPool(log)
     chaindb = ChainDb(settings, settings['db'], log, mempool, netmagic, False, False)

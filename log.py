@@ -1,10 +1,7 @@
-
-#
 # Log.py
 #
 # Distributed under the MIT/X11 software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-#
 
 import sys
 
@@ -19,4 +16,3 @@ class Log(object):
 	def write(self, msg):
 		line = "%s\n" % msg
 		self.fh.write(line)
-

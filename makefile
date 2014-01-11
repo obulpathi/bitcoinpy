@@ -1,13 +1,13 @@
 all:
 	python bitcoinpy.py config.cfg
 
-wallet:
-	python wallet.py
+clean:
+	rm -rf ~/.bitcoinpy
 
 new:
 	rm -rf ~/.bitcoinpy/*
 	mkdir -p ~/.bitcoinpy/leveldb
-	touch ~/.bitcoinpy/blocks.dat
+	cp genesis.dat ~/.bitcoinpy/blocks.dat
 	python bitcoinpy.py config.cfg
 
 install:
