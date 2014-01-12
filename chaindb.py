@@ -80,10 +80,11 @@ class HeightIdx(object):
 
 
 class ChainDb(object):
-    def __init__(self, settings, datadir, log, mempool, netmagic, readonly=False, fast_dbm=False):
+    def __init__(self, settings, datadir, log, mempool, wallet, netmagic, readonly=False, fast_dbm=False):
         self.settings = settings
         self.log = log
         self.mempool = mempool
+        self.wallet = wallet
         self.readonly = readonly
         self.netmagic = netmagic
         self.fast_dbm = fast_dbm
@@ -155,7 +156,7 @@ class ChainDb(object):
             print "block: ", block
             
             for tx in block.vtx:
-                print "\ttransaction: ", tx
+                # print "\ttransaction: ", tx
                 for txout in tx.vout:
                     print "\t\ttxout: ", txout
                     print "\t\tscript: ", binascii.hexlify(txout.scriptPubKey)
@@ -737,7 +738,7 @@ class ChainDb(object):
                 continue
 
             blksize = struct.unpack("<i", buf[sizepos:blkpos])[0]
-            print "blkpos: ", blkpos, "blksize: ", blksize, "buflen: ", buflen
+            # print "blkpos: ", blkpos, "blksize: ", blksize, "buflen: ", buflen
             if (blkpos + blksize) > buflen:
                 wanted = 8 + blksize
                 continue
@@ -748,9 +749,7 @@ class ChainDb(object):
             f = cStringIO.StringIO(ser_blk)
             block = CBlock()
             block.deserialize(f)
-            import tmp
-            tmp.foo(block) # remove me
-            print("adding the genesis block")
+            # print("adding the genesis block")
             self.putblock(block)
 
     def newblock_txs(self):
@@ -826,9 +825,9 @@ class ChainDb(object):
 
     def newblock(self):
         tophash = self.gettophash()
-        print "Tophash: ", tophash
+        # print "Tophash: ", tophash
         prevblock = self.getblock(tophash)
-        print "Previous block: ", prevblock
+        # print "Previous block: ", prevblock
         if prevblock is None:
             return None
 
@@ -846,11 +845,13 @@ class ChainDb(object):
 
         txout = CTxOut()
         txout.nValue = block_value(self.getheight(), total_fees)
-        address = self.wallet.getnewaddress()
-        txout.scriptPubKey = utils.address_to_pay_to_script_hash(address)
+        public_key, address = self.wallet.getnewaddress()
         print "address: ", address
-        print "public key: ", binascii.hexlify(utils.address_to_public_key_hash(address))
+        print "public_key_hex: ", public_key
+        txout.scriptPubKey = utils.public_key_hex_to_pay_to_script_hash(public_key)
+        # print "public key: ", binascii.hexlify(utils.address_to_pay_to_script_hash(address))
         print "scriptPubKey: ", binascii.hexlify(txout.scriptPubKey)
+        
         #txout.scriptPubKey = binascii.unhexlify("410450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B23522CD470243453A299FA9E77237716103ABC11A1DF38855ED6F2EE187E9C582BA6AC")
         # FIXME: public key corresponding to address "1JhvTbFh4tF5MWx3w8v938YmsXV5CeaKYp"
         #txout.scriptPubKey = binascii.unhexlify("41046f5ec7490d5eae8e9fda546f6f6ebd1e975d7819de26ab6e581709609d7830662633d155c70c0430b09bb86421467958fb8648ec5ab3b37e3e5d6bc1bbba5368ac")

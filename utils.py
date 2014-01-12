@@ -68,20 +68,20 @@ def public_key_hex_to_address(public_key_hex):
     address = encode(binary_address)
     return address
 
+# fix this
 def address_to_public_key_hash(address):
     binary_address = decode(address)
+    print binascii.hexlify(binary_address)
     # remove the 4 checksum bytes
     extended_address = binary_address[:-4]
     # remove version byte: 0x00 for Main Network
     hash160_address = extended_address[1:]
     return hash160_address
 
-def address_to_pay_to_script_hash(address):
-    hash160_address = address_to_public_key_hash(address)
-    script = "41" + binascii.hexlify(hash160_address) + "AC"
-    print "Script", script
+def public_key_hex_to_pay_to_script_hash(public_key_hex):
+    script = "41" + public_key_hex + "AC"
     return binascii.unhexlify(script)
-
+    
 def address_to_pay_to_pubkey_hash(address):
     print "Not implemented >>>>>>>>>>>>>>>>>>>"
     exit(0)
@@ -99,8 +99,9 @@ if __name__ == "__main__":
     address2 = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
     public_key_hex1 = "0450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B23522CD470243453A299FA9E77237716103ABC11A1DF38855ED6F2EE187E9C582BA6"
     public_key_hex2 = "04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f"
-    print "addresses: ", address1, address2
-    print "public_keys_hex: ", public_key_hex1, public_key_hex2
-    print "public key to address: ", public_key_hex_to_address(public_key_hex2)
-    print "address to public key hash: ", binascii.hexlify(address_to_public_key_hash(address2))
-    print "public key hash: ", binascii.hexlify(myhash160(bytearray.fromhex(public_key_hex2)))
+    print "address: ", address1
+    print "public key_hex: ", public_key_hex1
+    #print "public_keys_hex: ", public_key_hex1, public_key_hex2
+    print "public key to address: ", public_key_hex_to_address(public_key_hex1)
+    print "address to public key hash: ", binascii.hexlify(address_to_public_key_hash(address1))
+    # print "public key hash: ", binascii.hexlify(myhash160(bytearray.fromhex(public_key_hex1)))

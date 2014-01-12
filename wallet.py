@@ -13,6 +13,7 @@ import hashlib
 import ctypes
 import ctypes.util
 import sys
+import utils
 
 ssl = ctypes.cdll.LoadLibrary (ctypes.util.find_library ('ssl') or 'libeay32')
 
@@ -159,7 +160,6 @@ def get_addr(k,version=0):
     if k.compressed:
         payload = secret + chr(1)
     pkey = base58_check_encode(payload, 128+version)
-    print pubkey
     return addr, pkey, binascii.hexlify(pubkey)
 
 def reencode(pkey,version=0):
@@ -204,7 +204,7 @@ class Wallet(object):
     # if wallet does not exist, create it
     def initialize(self):
         if not os.path.isfile(self.walletfile):
-            walletdb = open_wallet(writable = True)
+            walletdb = self.open(writable = True)
             print "Initilizing wallet"
             key = gen_eckey()
             address, private_key, public_key = get_addr(key)
@@ -238,7 +238,7 @@ class Wallet(object):
         walletdb[account] = dumps(addressmaplist)
         walletdb.sync()
         walletdb.close()
-        return address
+        return public_key, address
 
     # return an account
     def getaccount(self, account = None):
@@ -258,7 +258,6 @@ class Wallet(object):
         # if account is wallet 
         addressmaplist = loads(walletdb[account])
         walletdb.close()
-        print addressmaplist
         return addressmaplist
 
     # getaccounts  
@@ -277,7 +276,27 @@ class Wallet(object):
         return
     
     # retrn balance of an account
-    def getbalance(account):
+    def getbalance(self, account):
+        if not account:
+            account = "account"
+        account = "account"
+        walletdb = self.open()
+        # if wallet is not initialized, return
+        if 'accounts' not in walletdb:
+            print "Wallet not initialized ... quitting!"
+            return None
+        # wallet is initialized
+        accounts = loads(walletdb['accounts'])
+        if account not in accounts:
+            print "Error: Account nto found"
+            return
+        # if account is wallet 
+        addressmaplist = loads(walletdb[account])
+        walletdb.close()
+        for addressmap in addressmaplist:
+            addressmap['balance'] = self.chaindb.getbalance(addressmap['address'])
+        return addressmaplist
+        
         """
         walletdb = open_wallet(db_env, walletfile, writable = True)
         # get account
@@ -295,13 +314,10 @@ class Wallet(object):
         walletdb[account] = dumps({"public_key": "Public key", "private_key": private_key, "address": address, "balance": balance, "height" : height})
         walletdb.close()
         """
-        # get chaindb from bitcoinpy
-        balance = self.chaindb.getbalance(address)
-        return balance
 
     # send to an address
     def sendtoaddress(self, fromaddress, toaddress, amount):
-        print "sending: ", amount, "from address: ", fromaddress, " to address: ", toaddress
+        # print "sending: ", amount, "from address: ", fromaddress, " to address: ", toaddress
         txin = CTxIn()
         txin.prevout = COutPoint()
         # fix the address hardcoding
@@ -311,8 +327,16 @@ class Wallet(object):
         # FIXME: FIX the adderss hardcoding stuff ... and also a block needs to be mined too ... for balance check
         txout = CTxOut()
         txout.nValue = 2
-        print "TXOUT: ", txout.nValue, type(txout.nValue)
-        txout.scriptPubKey = binascii.unhexlify("410450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B23522CD470243453A299FA9E77237716103ABC11A1DF38855ED6F2EE187E9C582BA6AC")
+        addressmaplist = self.getbalance('account')
+        for addressmap in addressmaplist:
+            print toaddress, addressmap['address']
+            if toaddress == addressmap['address']:
+                from_public_key_hex = addressmap['public_key']
+        if not from_public_key_hex:
+            print "Address not found, exiting"
+            return
+        print "from_public_key_hex", from_public_key_hex
+        txout.scriptPubKey = utils.public_key_hex_to_pay_to_script_hash(from_public_key_hex)
         tx = CTransaction()
         tx.vin.append(txin)
         tx.vout.append(txout)

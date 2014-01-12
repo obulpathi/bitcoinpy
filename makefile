@@ -1,6 +1,9 @@
 all:
 	python bitcoinpy.py config.cfg
 
+tmp:
+	python tmp.py
+
 clean:
 	rm -rf ~/.bitcoinpy
 

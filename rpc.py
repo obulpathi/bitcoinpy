@@ -111,10 +111,11 @@ class RPCExec(object):
         return (s, None)
 
     def getaccount(self, params):
+        print "RPC : Get account"
         return (self.wallet.getaccount(params[0]), None)
 
     def getbalance(self, params):
-        return (self.chaindb.getbalance(params[0]), None)
+        return (self.wallet.getbalance(params[0]), None)
 
     def getblock(self, params):
         err = { "code" : -1, "message" : "invalid params" }
