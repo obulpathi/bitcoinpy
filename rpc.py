@@ -14,7 +14,6 @@ import sys
 import itertools
 
 import chaindb
-import wallet
 from bitcoin.core import CBlock
 import bitcoin.coredefs
 from bitcoin.serialize import uint256_from_compact
@@ -83,10 +82,11 @@ def blockToJSON(block, blkmeta, cur_height):
     return res
 
 class RPCExec(object):
-    def __init__(self, peermgr, mempool, chaindb, log, rpcuser, rpcpass):
+    def __init__(self, peermgr, mempool, chaindb, wallet, log, rpcuser, rpcpass):
         self.peermgr = peermgr
         self.mempool = mempool
         self.chaindb = chaindb
+        self.wallet = wallet
         self.rpcuser = rpcuser
         self.rpcpass = rpcpass
         self.log = log
@@ -111,7 +111,7 @@ class RPCExec(object):
         return (s, None)
 
     def getaccount(self, params):
-        return (wallet.getaccount(params[0]), None)
+        return (self.wallet.getaccount(params[0]), None)
 
     def getbalance(self, params):
         return (self.chaindb.getbalance(params[0]), None)
@@ -169,7 +169,7 @@ class RPCExec(object):
         return (d, None)
 
     def getnewaddress(self, params):
-        address = wallet.getnewaddress()
+        address = self.wallet.getnewaddress()
         return (address, None)
 
     def getrawmempool(self, params):

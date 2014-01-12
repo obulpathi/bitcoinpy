@@ -15,8 +15,6 @@ import shutil
 from decimal import Decimal
 from cache import Cache
 
-import wallet
-
 from bitcoin.serialize import *
 from bitcoin.core import *
 from bitcoin.messages import msg_block, message_to_str, message_read
@@ -182,7 +180,7 @@ class ChainDb(object):
    
     def sendtoaddress(self, fromaddress, toaddress, amount):
         print "chain db passing to wallt"
-        tx = wallet.sendtoaddress(fromaddress, toaddress, amount)
+        tx = self.wallet.sendtoaddress(fromaddress, toaddress, amount)
         print "wallet returned the tx to chaindb"
         self.mempool.add(tx)
         print "Added to memopool >>>>>>>>>>>>>>>>>>>>>>>>>."
@@ -848,7 +846,7 @@ class ChainDb(object):
 
         txout = CTxOut()
         txout.nValue = block_value(self.getheight(), total_fees)
-        address = wallet.getnewaddress()
+        address = self.wallet.getnewaddress()
         txout.scriptPubKey = utils.address_to_pay_to_script_hash(address)
         print "address: ", address
         print "public key: ", binascii.hexlify(utils.address_to_public_key_hash(address))

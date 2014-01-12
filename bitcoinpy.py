@@ -22,7 +22,7 @@ import copy
 import shutil
 
 import rpc
-import wallet
+from wallet import Wallet
 from log import Log
 from node import Node
 from mempool import MemPool
@@ -80,6 +80,8 @@ if __name__ == '__main__':
     netmagic = NETWORKS[chain]
 
     datadir = settings['db']
+    # create wallet
+    wallet = Wallet()
     new_install = False
     # if datadir is not there, create and initialize
     if not os.path.isdir(datadir):
@@ -93,7 +95,7 @@ if __name__ == '__main__':
         with open(datadir + '/__db.001', 'a'):
             pass
         # initialize wallet
-        wallet.init_wallet(wallet.walletfile)
+        wallet.initialize()
 
     mempool = MemPool(log)
     chaindb = ChainDb(settings, settings['db'], log, mempool, netmagic, False, False)
@@ -116,7 +118,7 @@ if __name__ == '__main__':
         connection.start()
 
     # start HTTP server for JSON-RPC
-    rpcexec = rpc.RPCExec(peermgr, mempool, chaindb, log, settings['rpcuser'], settings['rpcpass'])
+    rpcexec = rpc.RPCExec(peermgr, mempool, chaindb, wallet, log, settings['rpcuser'], settings['rpcpass'])
     rpcserver = gevent.pywsgi.WSGIServer(('', settings['rpcport']), rpcexec.handle_request)
     rpc_server_thread = gevent.Greenlet(rpcserver.serve_forever)
     threads.append(rpc_server_thread)
