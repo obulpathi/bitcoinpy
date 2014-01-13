@@ -138,37 +138,24 @@ class ChainDb(object):
     def getbalance(self, address):
         balance = 0.0
         end_height = self.getheight()
-        print "end_height: ", end_height
+        print "\n\naddress: ", address
+        # print "end_height: ", end_height
         for height in xrange(end_height):
-            print "height: ", height
+            # print "height: ", height
             data = self.db.Get('height:' + str(height))
-            print "data at height: ", height, data
+            # print "data at height: ", height, data
             heightidx = HeightIdx()
             heightidx.deserialize(data)
             blkhash = heightidx.blocks[0]
-            # ser_hash = ser_uint256(blkhash)
-            
-            #f = cStringIO.StringIO(self.getblock(ser_hash))
-            # f = cStringIO.StringIO(self.getblock(blkhash))
-            # block = CBlock()
-            # block.deserialize(f)
             block = self.getblock(blkhash)
-            print "block: ", block
+            # print "block: ", block
             
             for tx in block.vtx:
-                # print "\ttransaction: ", tx
                 for txout in tx.vout:
-                    print "\t\ttxout: ", txout
-                    print "\t\tscript: ", binascii.hexlify(txout.scriptPubKey)
-                    print "\t\taddress: ", address
                     script_key_hash = utils.output_script_to_public_key_hash(txout.scriptPubKey)
                     public_key_hash = binascii.hexlify(utils.address_to_public_key_hash(address))
-                    print "\t\tscript_key_hash: ", script_key_hash
-                    print "\t\tpublic_key_hash: ", public_key_hash
                     if script_key_hash == public_key_hash:
                         balance = balance + txout.nValue
-                    else:
-                        print binascii.hexlify(utils.address_to_public_key_hash(address))
         return balance
     """ Merge into getbalance
     # scan the blocks for transactions to this address
@@ -179,39 +166,35 @@ class ChainDb(object):
     if height < chain_height:
     """
    
-    def sendtoaddress(self, fromaddress, toaddress, amount):
+    def sendtoaddress(self, toaddress, amount):
         print "chain db passing to wallt"
-        tx = self.wallet.sendtoaddress(fromaddress, toaddress, amount)
+        tx = self.wallet.sendtoaddress(toaddress, amount)
+        print "Is tx valid: ", tx.is_valid()
         print "wallet returned the tx to chaindb"
         self.mempool.add(tx)
         print "Added to memopool >>>>>>>>>>>>>>>>>>>>>>>>>."
 
     def listreceivedbyaddress(self, address):
+        txoutlist = []
         end_height = self.getheight()
         for height in xrange(end_height):
             data = self.db.Get('height:' + str(height))
-            # print "data at height: ", height, data
             heightidx = HeightIdx()
             heightidx.deserialize(data)
             blkhash = heightidx.blocks[0]
-            # ser_hash = ser_uint256(blkhash)
-            
-            #f = cStringIO.StringIO(self.getblock(ser_hash))
-            # f = cStringIO.StringIO(self.getblock(blkhash))
-            # block = CBlock()
-            # block.deserialize(f)
             block = self.getblock(blkhash)
-            # print "block: ", block
             
             for tx in block.vtx:
-                for txout in tx.vout:
+                for n, txout in enumerate(tx.vout):
                     script_key_hash = utils.output_script_to_public_key_hash(txout.scriptPubKey)
                     public_key_hash = binascii.hexlify(utils.address_to_public_key_hash(address))
                     if script_key_hash == public_key_hash:
-                        print "\ttransaction: ", tx
+                        # print "\ttransaction: ", txout
+                        # print "\tnValue: ", txout.nValue
                         tx.calc_sha256()
-                        print "\tSHA256: ", tx.sha256
-        return "Printed"
+                        # print "\tSHA256: ", tx.sha256
+                        txoutlist.append([tx.sha256, n, txout.nValue])
+        return txoutlist
 
     def gettxidx(self, txhash):
         ser_txhash = ser_uint256(txhash)
@@ -820,7 +803,6 @@ class ChainDb(object):
                 txlist.append(tx)
                 txlist_bytes += tx.ser_size
                 free_bytes -= tx.ser_size
-        
         return txlist
 
     def newblock(self):
@@ -846,11 +828,11 @@ class ChainDb(object):
         txout = CTxOut()
         txout.nValue = block_value(self.getheight(), total_fees)
         public_key, address = self.wallet.getnewaddress()
-        print "address: ", address
-        print "public_key_hex: ", public_key
+        # print "address: ", address
+        # print "public_key_hex: ", public_key
         txout.scriptPubKey = utils.public_key_hex_to_pay_to_script_hash(public_key)
         # print "public key: ", binascii.hexlify(utils.address_to_pay_to_script_hash(address))
-        print "scriptPubKey: ", binascii.hexlify(txout.scriptPubKey)
+        # print "scriptPubKey: ", binascii.hexlify(txout.scriptPubKey)
         
         #txout.scriptPubKey = binascii.unhexlify("410450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B23522CD470243453A299FA9E77237716103ABC11A1DF38855ED6F2EE187E9C582BA6AC")
         # FIXME: public key corresponding to address "1JhvTbFh4tF5MWx3w8v938YmsXV5CeaKYp"

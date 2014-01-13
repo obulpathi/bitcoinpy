@@ -208,7 +208,7 @@ class Wallet(object):
             print "Initilizing wallet"
             key = gen_eckey()
             address, private_key, public_key = get_addr(key)
-            walletdb['account'] = dumps([{"public_key": public_key, "private_key": private_key, "address": address, "balance": 0.0, "height" : 0}])
+            walletdb['account'] = dumps([{"public_key": public_key, "private_key": private_key, "address": address, "balance": 0.0, 'height' : 0, 'received' : []}])
             walletdb['accounts'] = dumps(['account'])
             walletdb.sync()
             walletdb.close()
@@ -316,27 +316,39 @@ class Wallet(object):
         """
 
     # send to an address
-    def sendtoaddress(self, fromaddress, toaddress, amount):
-        # print "sending: ", amount, "from address: ", fromaddress, " to address: ", toaddress
-        txin = CTxIn()
-        txin.prevout = COutPoint()
-        # fix the address hardcoding
-        txin.prevout.hash = 102036534123695066960262520358268546962206412441328032747133253249363145533949
-        txin.prevout.n = 0
-        txin.scriptSig = binascii.unhexlify("41046f5ec7490d5eae8e9fda546f6f6ebd1e975d7819de26ab6e581709609d7830662633d155c70c0430b09bb86421467958fb8648ec5ab3b37e3e5d6bc1bbba5368ac")
-        # FIXME: FIX the adderss hardcoding stuff ... and also a block needs to be mined too ... for balance check
-        txout = CTxOut()
-        txout.nValue = 2
+    def sendtoaddress(self, toaddress, amount):
         addressmaplist = self.getbalance('account')
         for addressmap in addressmaplist:
             print toaddress, addressmap['address']
             if toaddress == addressmap['address']:
-                from_public_key_hex = addressmap['public_key']
-        if not from_public_key_hex:
+                to_public_key_hex = addressmap['public_key']
+        if not to_public_key_hex:
             print "Address not found, exiting"
             return
-        print "from_public_key_hex", from_public_key_hex
-        txout.scriptPubKey = utils.public_key_hex_to_pay_to_script_hash(from_public_key_hex)
+        print "to_public_key_hex", to_public_key_hex
+        txout = CTxOut()
+        txout.nValue = amount
+        txout.scriptPubKey = utils.public_key_hex_to_pay_to_script_hash(to_public_key_hex)
+        
+        # select from address
+        addressmaplist = self.getbalance('account')
+        for addressmap in addressmaplist:
+            if addressmap['balance'] > amount:
+                from_address = addressmap['address']
+                from_public_key_hex = addressmap['public_key']
+        
+        # get received by from address: Right now only onw ... but it can be many
+        txoutlist = self.chaindb.listreceivedbyaddress(from_address)
+        
+        # right now there is only one, but there can be many
+        txin = CTxIn()
+        txin.prevout = COutPoint()
+        # fix the address hardcoding
+        txin.prevout.hash = txoutlist[0][0]
+        txin.prevout.n = 0
+        # FIXME
+        txin.scriptSig = utils.public_key_hex_to_pay_to_script_hash(from_public_key_hex)
+
         tx = CTransaction()
         tx.vin.append(txin)
         tx.vout.append(txout)

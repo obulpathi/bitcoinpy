@@ -200,7 +200,7 @@ class RPCExec(object):
         return (ser_tx.encode('hex'), None)
 
     def getreceivedbyaddress(self, params):
-        return (0.0, None)
+        return (self.chaindb.listreceivedbyaddress(params[0]), None)
 
     def getwork_new(self):
         print("get work new called >>>>>>>>>>>>>>>>")
@@ -282,7 +282,7 @@ class RPCExec(object):
 
     def sendtoaddress(self, params):
         print("RPC: sending to chaindb")
-        return (self.chaindb.sendtoaddress(params[0], params[1], params[2]), None)
+        return (self.chaindb.sendtoaddress(params[0], params[1]), None)
 
     def submitblock(self, params):
         print("submit block called >>>>>>>>>>>>>>>>")

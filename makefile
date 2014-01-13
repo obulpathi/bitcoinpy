@@ -1,6 +1,9 @@
 all:
 	python bitcoinpy.py config.cfg
 
+test:
+	python test.py
+
 tmp:
 	python tmp.py
 

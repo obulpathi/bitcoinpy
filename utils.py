@@ -71,7 +71,6 @@ def public_key_hex_to_address(public_key_hex):
 # fix this
 def address_to_public_key_hash(address):
     binary_address = decode(address)
-    print binascii.hexlify(binary_address)
     # remove the 4 checksum bytes
     extended_address = binary_address[:-4]
     # remove version byte: 0x00 for Main Network
