@@ -137,6 +137,11 @@ class ChainDb(object):
 
     def getbalance(self, address):
         balance = 0.0
+        txouts = self.listreceivedbyaddress(address)
+        for txout in txouts.itervalues():
+            balance = balance + txout[2]
+        return balance
+        """
         end_height = self.getheight()
         print "\n\naddress: ", address
         # print "end_height: ", end_height
@@ -156,7 +161,7 @@ class ChainDb(object):
                     public_key_hash = binascii.hexlify(utils.address_to_public_key_hash(address))
                     if script_key_hash == public_key_hash:
                         balance = balance + txout.nValue
-        return balance
+        return balance """
     """ Merge into getbalance
     # scan the blocks for transactions to this address
     chain_height = 10
@@ -175,8 +180,10 @@ class ChainDb(object):
         print "Added to memopool >>>>>>>>>>>>>>>>>>>>>>>>>."
 
     def listreceivedbyaddress(self, address):
-        txoutlist = []
+        txouts = {}
         end_height = self.getheight()
+        public_key_hash = binascii.hexlify(utils.address_to_public_key_hash(address))
+
         for height in xrange(end_height):
             data = self.db.Get('height:' + str(height))
             heightidx = HeightIdx()
@@ -185,16 +192,19 @@ class ChainDb(object):
             block = self.getblock(blkhash)
             
             for tx in block.vtx:
+                # if this transaction refers to this address in input, remove the previous transaction
+                for txin in tx.vin:
+                    # FIXME
+                    script_key_hash = utils.output_script_to_public_key_hash(txin.scriptSig)
+                    if script_key_hash == public_key_hash:
+                        del txouts[txin.prevout.hash]
+                # if this transaction refers to this address in output, add this transaction
                 for n, txout in enumerate(tx.vout):
                     script_key_hash = utils.output_script_to_public_key_hash(txout.scriptPubKey)
-                    public_key_hash = binascii.hexlify(utils.address_to_public_key_hash(address))
                     if script_key_hash == public_key_hash:
-                        # print "\ttransaction: ", txout
-                        # print "\tnValue: ", txout.nValue
                         tx.calc_sha256()
-                        # print "\tSHA256: ", tx.sha256
-                        txoutlist.append([tx.sha256, n, txout.nValue])
-        return txoutlist
+                        txouts[tx.sha256] = [tx.sha256, n, txout.nValue]
+        return txouts
 
     def gettxidx(self, txhash):
         ser_txhash = ser_uint256(txhash)
