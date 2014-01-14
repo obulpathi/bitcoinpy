@@ -139,7 +139,7 @@ class ChainDb(object):
         balance = 0.0
         txouts = self.listreceivedbyaddress(address)
         for txout in txouts.itervalues():
-            balance = balance + txout[2]
+            balance = balance + txout['value']
         return balance
         """
         end_height = self.getheight()
@@ -172,10 +172,7 @@ class ChainDb(object):
     """
    
     def sendtoaddress(self, toaddress, amount):
-        print "chain db passing to wallt"
         tx = self.wallet.sendtoaddress(toaddress, amount)
-        print "Is tx valid: ", tx.is_valid()
-        print "wallet returned the tx to chaindb"
         self.mempool.add(tx)
         print "Added to memopool >>>>>>>>>>>>>>>>>>>>>>>>>."
 
@@ -183,7 +180,7 @@ class ChainDb(object):
         txouts = {}
         end_height = self.getheight()
         public_key_hash = binascii.hexlify(utils.address_to_public_key_hash(address))
-
+        
         for height in xrange(end_height):
             data = self.db.Get('height:' + str(height))
             heightidx = HeightIdx()
@@ -194,8 +191,8 @@ class ChainDb(object):
             for tx in block.vtx:
                 # if this transaction refers to this address in input, remove the previous transaction
                 for txin in tx.vin:
-                    # FIXME
-                    script_key_hash = utils.output_script_to_public_key_hash(txin.scriptSig)
+                    script_key_hash = utils.output_script_to_public_key_hash(txin.scriptSig) # FIXME
+                    # print 'script_key_hash: ', script_key_hash 
                     if script_key_hash == public_key_hash:
                         del txouts[txin.prevout.hash]
                 # if this transaction refers to this address in output, add this transaction
@@ -203,7 +200,7 @@ class ChainDb(object):
                     script_key_hash = utils.output_script_to_public_key_hash(txout.scriptPubKey)
                     if script_key_hash == public_key_hash:
                         tx.calc_sha256()
-                        txouts[tx.sha256] = [tx.sha256, n, txout.nValue]
+                        txouts[tx.sha256] = {'txhash': tx.sha256, 'n': n, 'value': txout.nValue}
         return txouts
 
     def gettxidx(self, txhash):

@@ -319,37 +319,91 @@ class Wallet(object):
     def sendtoaddress(self, toaddress, amount):
         addressmaplist = self.getbalance('account')
         for addressmap in addressmaplist:
-            print toaddress, addressmap['address']
             if toaddress == addressmap['address']:
                 to_public_key_hex = addressmap['public_key']
         if not to_public_key_hex:
             print "Address not found, exiting"
             return
-        print "to_public_key_hex", to_public_key_hex
+        
+        # create transaction
+        tx = CTransaction()
+        
+        # to the merchant
         txout = CTxOut()
         txout.nValue = amount
         txout.scriptPubKey = utils.public_key_hex_to_pay_to_script_hash(to_public_key_hex)
+        tx.vout.append(txout)
         
-        # select from address
+        # get the input addresses
+        funds = 0
+        from_addresses = []
         addressmaplist = self.getbalance('account')
         for addressmap in addressmaplist:
-            if addressmap['balance'] > amount:
-                from_address = addressmap['address']
-                from_public_key_hex = addressmap['public_key']
+            if addressmap['balance'] == 0:
+                continue
+            else:
+                from_addresses.append({'from_address': addressmap['address'], 'from_public_key_hex': addressmap['public_key']})
+                funds = funds + addressmap['balance']
+                if funds >= amount + utils.calculate_fees(tx):
+                    break
         
-        # get received by from address: Right now only onw ... but it can be many
-        txoutlist = self.chaindb.listreceivedbyaddress(from_address)
+        # incase of insufficient funds, return
+        if funds < amount + utils.calculate_fees(tx):
+            print "In sufficient funds, exiting, return"
+            return
+            
+        nValueIn = 0
+        # if wallet has sufficient funds
+        for from_address in from_addresses:
+            # get received by from address
+            previous_txouts = self.chaindb.listreceivedbyaddress(from_address['from_address'])
+            for previous_hash, previous_txout in previous_txouts.iteritems():
+                txin = CTxIn()
+                txin.prevout = COutPoint()
+                txin.prevout.hash = previous_txout['txhash']
+                txin.prevout.n = previous_txout['n']
+                txin.scriptSig = utils.public_key_hex_to_pay_to_script_hash(from_address['from_public_key_hex']) #FIXME
+                tx.vin.append(txin)
+                nValueIn = nValueIn + previous_txout['value']
+                if nValueIn >= amount + utils.calculate_fees(tx):
+                    break
+            if nValueIn >= amount + utils.calculate_fees(tx):
+                break
         
-        # right now there is only one, but there can be many
-        txin = CTxIn()
-        txin.prevout = COutPoint()
-        # fix the address hardcoding
-        txin.prevout.hash = txoutlist[0][0]
-        txin.prevout.n = 0
-        # FIXME
-        txin.scriptSig = utils.public_key_hex_to_pay_to_script_hash(from_public_key_hex)
+        # query finalized, non-coinbase mempool tx's
+        if tx.is_coinbase() or not tx.is_final():
+            return tx
+        # iterate through inputs, calculate total input value: Merge this into above code (while fetching the txins)
+        valid = True
+        # nValueIn = 0
+        nValueOut = 0
+        for tin in tx.vin:
+            in_tx = self.chaindb.gettx(tin.prevout.hash)
+            if (in_tx is None or tin.prevout.n >= len(in_tx.vout)):
+                valid = False
+            else:
+                v = in_tx.vout[tin.prevout.n].nValue
+                # nValueIn += v
 
-        tx = CTransaction()
-        tx.vin.append(txin)
-        tx.vout.append(txout)
+        if not valid:
+            return
+            
+        # iterate through outputs, calculate total output value
+        for txout in tx.vout:
+            nValueOut += txout.nValue
+
+        # calculate the total excess amount
+        excessAmount = nValueIn - nValueOut
+        if excessAmount < 0:
+            print "ERROR: excessAmount is in deficit >>>>>>>>>>>>>>>>>> "
+            return
+                
+        # change address
+        fees = utils.calculate_fees(tx)
+        change_txout = CTxOut()
+        change_txout.nValue = excessAmount - fees
+        from_public_key_hex = from_addresses[0]['from_public_key_hex']
+        change_txout.scriptPubKey = utils.public_key_hex_to_pay_to_script_hash(from_public_key_hex)
+        
+        tx.vout.append(change_txout)
         return tx

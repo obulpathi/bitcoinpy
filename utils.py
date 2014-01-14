@@ -93,6 +93,10 @@ def output_script_to_public_key_hash(script):
 def address_to_output_script(address):
     pass
 
+# FIX ME: fees is not fixed, but for now its isset to 1
+def calculate_fees(tx):
+    return 1
+    
 if __name__ == "__main__":
     address1 = "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM"
     address2 = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
