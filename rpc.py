@@ -203,18 +203,13 @@ class RPCExec(object):
         return (self.chaindb.listreceivedbyaddress(params[0]), None)
 
     def getwork_new(self):
-        print("get work new called >>>>>>>>>>>>>>>>")
         err = { "code" : -6, "message" : "internal error" }
         tmp_top = self.chaindb.gettophash()
-        print "tmp_hash: ", tmp_top
-        print "self.work_hash: ", self.work_tophash
         if self.work_tophash != tmp_top:
             self.work_tophash = tmp_top
             self.work_blocks = {}
 
         block = self.chaindb.newblock()
-        print "hashMerkleRoot: ", block.hashMerkleRoot
-        print "Block: ", block
 
         if block is None:
             ret = {}
@@ -226,7 +221,6 @@ class RPCExec(object):
 
         target = uint256_from_compact(block.nBits)
         res['target'] = "%064x" % (target,)
-        res['target'] = "00000000000000000000000000000000000000000000000000000000ffff0000" # FIXME
 
         data = block.serialize()
         data = data[:80]
@@ -239,7 +233,6 @@ class RPCExec(object):
         return (res, None)
 
     def getwork_submit(self, hexstr):
-        print("get work submit called >>>>>>>>>>>>>>>>")
         data = hexstr.decode('hex')
         if len(data) != 128:
             err = { "code" : -5, "message" : "invalid data" }
@@ -265,7 +258,6 @@ class RPCExec(object):
         return (res, None)
 
     def getwork(self, params):
-        print("get work called >>>>>>>>>>>>>>>>")
         err = { "code" : -1, "message" : "invalid params" }
         if len(params) == 1:
             if (not isinstance(params[0], str) and

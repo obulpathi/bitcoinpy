@@ -406,4 +406,9 @@ class Wallet(object):
         change_txout.scriptPubKey = utils.public_key_hex_to_pay_to_script_hash(from_public_key_hex)
         
         tx.vout.append(change_txout)
+        # cauculate txhash
+        tx.calc_sha256()
+        # sign the transaction
+        txhash = tx.sha256
+        
         return tx

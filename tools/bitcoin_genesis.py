@@ -42,9 +42,11 @@ block.nTime    = 1231006505
 block.nBits    = 486604799 # 0x1d00ffff
 block.nNonce   = 2083236893
 block.vtx = [tx]
-# block.sha256 = 0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
-#print block.calc_sha256()
-#print block.sha256
+
+block.calc_sha256()
+print "Calculated hash: ", hex(block.sha256)
+print " >>>>>>>>>>>>>>: ", "0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
+#
 #print block.is_valid()
 
 genesis = binascii.hexlify(block.serialize())
