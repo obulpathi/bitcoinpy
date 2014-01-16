@@ -13,8 +13,8 @@
 const uint64_t COIN = 100000000;
 const uint64_t CENT = 1000000;
 
-uint32_t OP_CHECKSIG = 172; // This is expressed as 0xAC
-bool generateBlock = false;
+uint32_t OP_CHECKSIG = 0xAC;
+bool generateBlock = true;
 uint32_t startNonce = 0;
 uint32_t unixtime = 0;
 
@@ -44,7 +44,7 @@ typedef struct {
 	uint32_t locktime;
 } Transaction;
 
-// Got this off the internet. Am not sure if it can fail in some circumstances
+// swap the bytes
 void byteswap(uint8_t *buf, int length)
 {
 	int i;
@@ -59,7 +59,7 @@ void byteswap(uint8_t *buf, int length)
 }
 
 // Following two functions are borrowed from cgminer.
-char *bin2hex(const unsigned char *p, size_t len)
+char* bin2hex(const unsigned char *p, size_t len)
 {
 	char *s = malloc((len * 2) + 1);
 	unsigned int i;
@@ -107,7 +107,7 @@ size_t hex2bin(unsigned char *p, const char *hexstr, size_t len)
 	return ret;
 }
 
-Transaction *InitTransaction()
+Transaction* InitTransaction()
 {
 	Transaction *transaction;
 	
@@ -124,7 +124,7 @@ Transaction *InitTransaction()
 	transaction->locktime = 0;
 	transaction->prevoutIndex = 0xFFFFFFFF;
 	transaction->sequence = 0xFFFFFFFF;
-	transaction->outValue = 50*COIN;
+	transaction->outValue = 50 * COIN;
 	
 	// We initialize the previous output to 0 as there is none
 	memset(transaction->prevOutput, 0, 32);
@@ -142,7 +142,8 @@ int main(int argc, char *argv[])
 	
 	if((argc-1) < 3)
 	{
-		fprintf(stderr, "Usage: genesisgen [options] <pubkey> \"<timestamp>\" <nBits>\n");
+		fprintf(stderr, "Usage: genesis [options] <pubkey> \"<timestamp>\" <nBits>\n");
+		fprintf(stderr, "Example: genesis [options] 048b943243eb1419323ca6f13f88cdfa6e90f842468a5c265f3847a40f6390f72721c5ce06e4147bd0eac09424125cb647b686166c0f4da2b9661eb0e40d93954d \"<timestamp>\" <nBits>\n");
 		return 0;		
 	}
 	
@@ -283,7 +284,7 @@ int main(int argc, char *argv[])
 	char *pubScriptSig = bin2hex(transaction->pubkeyScript, pubkeyScript_len);
 	printf("\nCoinbase: %s\n\nPubkeyScript: %s\n\nMerkle Hash: %s\nByteswapped: %s\n",txScriptSig, pubScriptSig, merkleHash, merkleHashSwapped);
 	
-	//if(generateBlock)
+	if(generateBlock)
 	{
 		printf("Generating block...\n");
 		if(!unixtime)
@@ -314,7 +315,7 @@ int main(int argc, char *argv[])
 			{
 				byteswap(block_hash2, 32);
 				char *blockHash = bin2hex(block_hash2, 32);
-				printf("\nBlock found!\nHash: %s\nNonce: %u\nUnix time: %u", blockHash, startNonce, unixtime);
+				printf("\nBlock found!\nHash: %s\nNonce: %u\nUnix time: %u\n", blockHash, startNonce, unixtime);
 				free(blockHash);
 				break;
 			}
@@ -330,10 +331,10 @@ int main(int argc, char *argv[])
 			*pNonce = startNonce;
 			if(startNonce > 4294967294LL)
 			{
-				//printf("\nBlock found!\nHash: %s\nNonce: %u\nUnix time: %u", blockHash, startNonce, unixtime);
 				unixtime++;
 				*pUnixtime = unixtime;
 				startNonce = 0;
+				printf("restarting\n\n");
 			}
 		}
 	}
