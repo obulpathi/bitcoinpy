@@ -126,7 +126,8 @@ class ChainDb(object):
         try:
             self.db.Get('tx:'+ser_txhash)
             old_txidx = self.gettxidx(txhash)
-            self.log.write("WARNING: overwriting duplicate TX %064x, height %d, oldblk %064x, oldspent %x, newblk %064x" % (txhash, self.getheight(), old_txidx.blkhash, old_txidx.spentmask, txidx.blkhash))
+            self.log.write("WARNING: overwriting duplicate TX %064x, height %d, oldblk %064x, \
+            oldspent %x, newblk %064x" % (txhash, self.getheight(), old_txidx.blkhash, old_txidx.spentmask, txidx.blkhash))
         except KeyError:
             pass
         batch = self.db if batch is not None else batch
@@ -191,7 +192,7 @@ class ChainDb(object):
             for tx in block.vtx:
                 # if this transaction refers to this address in input, remove the previous transaction
                 for txin in tx.vin:
-                    script_key_hash = utils.output_script_to_public_key_hash(txin.scriptSig) # FIXME
+                    script_key_hash = utils.output_script_to_public_key_hash(txin.scriptSig)
                     # print 'script_key_hash: ', script_key_hash 
                     if script_key_hash == public_key_hash:
                         del txouts[txin.prevout.hash]
@@ -816,7 +817,6 @@ class ChainDb(object):
         tophash = self.gettophash()
         # print "Tophash: ", tophash
         prevblock = self.getblock(tophash)
-        # print "Previous block: ", prevblock
         if prevblock is None:
             return None
 
@@ -829,21 +829,12 @@ class ChainDb(object):
         # build coinbase
         txin = CTxIn()
         txin.prevout.set_null()
-        # FIXME
         txin.coinbase = "COINBASE TX"
 
         txout = CTxOut()
         txout.nValue = block_value(self.getheight(), total_fees)
-        public_key, address = self.wallet.getnewaddress()
-        # print "address: ", address
-        # print "public_key_hex: ", public_key
-        txout.scriptPubKey = utils.public_key_hex_to_pay_to_script_hash(public_key)
-        # print "public key: ", binascii.hexlify(utils.address_to_pay_to_script_hash(address))
-        # print "scriptPubKey: ", binascii.hexlify(txout.scriptPubKey)
-        
-        #txout.scriptPubKey = binascii.unhexlify("410450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B23522CD470243453A299FA9E77237716103ABC11A1DF38855ED6F2EE187E9C582BA6AC")
-        # FIXME: public key corresponding to address "1JhvTbFh4tF5MWx3w8v938YmsXV5CeaKYp"
-        #txout.scriptPubKey = binascii.unhexlify("41046f5ec7490d5eae8e9fda546f6f6ebd1e975d7819de26ab6e581709609d7830662633d155c70c0430b09bb86421467958fb8648ec5ab3b37e3e5d6bc1bbba5368ac")
+        public_key_hex, address = self.wallet.getnewaddress()
+        txout.scriptPubKey = utils.public_key_hex_to_pay_to_pubkey(public_key_hex)
 
         coinbase = CTransaction()
         coinbase.vin.append(txin)
@@ -853,7 +844,7 @@ class ChainDb(object):
         block = CBlock()
         block.hashPrevBlock = tophash
         block.nTime = int(time.time())
-        block.nBits = prevblock.nBits   # TODO: wrong
+        block.nBits = prevblock.nBits   # FIXME
         block.vtx.append(coinbase)
         block.vtx.extend(txlist)
         block.hashMerkleRoot = block.calc_merkle()

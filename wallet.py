@@ -244,7 +244,7 @@ class Wallet(object):
     def getaccount(self, account = None):
         if not account:
             account = "account"
-        account = "account" # FIXME 
+        account = "account"
         walletdb = self.open()
         # if wallet is not initialized, return
         if 'accounts' not in walletdb:
@@ -288,7 +288,7 @@ class Wallet(object):
         # wallet is initialized
         accounts = loads(walletdb['accounts'])
         if account not in accounts:
-            print "Error: Account nto found"
+            print "Error: Account not found"
             return
         # if account is wallet 
         addressmaplist = loads(walletdb[account])
@@ -318,21 +318,6 @@ class Wallet(object):
     # send to an address
     def sendtoaddress(self, toaddress, amount):
         addressmaplist = self.getbalance('account')
-        for addressmap in addressmaplist:
-            if toaddress == addressmap['address']:
-                to_public_key_hex = addressmap['public_key']
-        if not to_public_key_hex:
-            print "Address not found, exiting"
-            return
-        
-        # create transaction
-        tx = CTransaction()
-        
-        # to the merchant
-        txout = CTxOut()
-        txout.nValue = amount
-        txout.scriptPubKey = utils.public_key_hex_to_pay_to_script_hash(to_public_key_hex)
-        tx.vout.append(txout)
         
         # get the input addresses
         funds = 0
@@ -344,71 +329,66 @@ class Wallet(object):
             else:
                 from_addresses.append({'from_address': addressmap['address'], 'from_public_key_hex': addressmap['public_key']})
                 funds = funds + addressmap['balance']
-                if funds >= amount + utils.calculate_fees(tx):
+                if funds >= amount + utils.calculate_fees(None):
                     break
         
         # incase of insufficient funds, return
-        if funds < amount + utils.calculate_fees(tx):
+        if funds < amount + utils.calculate_fees(None):
             print "In sufficient funds, exiting, return"
             return
             
+        # create transaction
+        tx = CTransaction()
+        
+        # to the receiver
+        txout = CTxOut()
+        txout.nValue = amount
+        txout.scriptPubKey = utils.address_to_pay_to_pubkey_hash(toaddress)
+        tx.vout.append(txout)
+        
+        # from the sender
         nValueIn = 0
-        # if wallet has sufficient funds
+        keychain = {}
         for from_address in from_addresses:
             # get received by from address
-            previous_txouts = self.chaindb.listreceivedbyaddress(from_address['from_address'])
+            previous_txouts = self.chaindb.listreceivedbyaddress(from_address['from_address']) # will it be better if we return the transactions them selves?
             for previous_hash, previous_txout in previous_txouts.iteritems():
                 txin = CTxIn()
                 txin.prevout = COutPoint()
-                txin.prevout.hash = previous_txout['txhash']
+                txin.prevout.hash = previous_txout['txhash'] # same as previous_hash?
                 txin.prevout.n = previous_txout['n']
-                txin.scriptSig = utils.public_key_hex_to_pay_to_script_hash(from_address['from_public_key_hex']) #FIXME
+                prevtx = self.chaindb.gettx(tin.prevout.hash)
+                txin.scriptSig = prevtx.vout[txin.prevout.n].scriptPubKey
                 tx.vin.append(txin)
                 nValueIn = nValueIn + previous_txout['value']
+                keychain[
                 if nValueIn >= amount + utils.calculate_fees(tx):
                     break
             if nValueIn >= amount + utils.calculate_fees(tx):
                 break
-        
-        # query finalized, non-coinbase mempool tx's
-        if tx.is_coinbase() or not tx.is_final():
-            return tx
-        # iterate through inputs, calculate total input value: Merge this into above code (while fetching the txins)
-        valid = True
-        # nValueIn = 0
-        nValueOut = 0
-        for tin in tx.vin:
-            in_tx = self.chaindb.gettx(tin.prevout.hash)
-            if (in_tx is None or tin.prevout.n >= len(in_tx.vout)):
-                valid = False
-            else:
-                v = in_tx.vout[tin.prevout.n].nValue
-                # nValueIn += v
-
-        if not valid:
-            return
-            
-        # iterate through outputs, calculate total output value
-        for txout in tx.vout:
-            nValueOut += txout.nValue
 
         # calculate the total excess amount
         excessAmount = nValueIn - nValueOut
-        if excessAmount < 0:
-            print "ERROR: excessAmount is in deficit >>>>>>>>>>>>>>>>>> "
-            return
-                
-        # change address
+        # calculate the fees
         fees = utils.calculate_fees(tx)
-        change_txout = CTxOut()
-        change_txout.nValue = excessAmount - fees
-        from_public_key_hex = from_addresses[0]['from_public_key_hex']
-        change_txout.scriptPubKey = utils.public_key_hex_to_pay_to_script_hash(from_public_key_hex)
+        # create change transaction, if there is any change left
+        if excessAmount > fees:
+            change_txout = CTxOut()
+            change_txout.nValue = excessAmount - fees
+            fromaddress = from_addresses[0]['from_address']
+            change_txout.scriptPubKey = utils.address_to_pay_to_pubkey_hash(fromaddress)
+            tx.vout.append(change_txout)
         
-        tx.vout.append(change_txout)
-        # cauculate txhash
+        # calculate txhash
         tx.calc_sha256()
-        # sign the transaction
         txhash = tx.sha256
-        
+        # sign the transaction
+        for txin in tx.vin:
+            key = CKey()
+            key.generate(('%064x' % PRIVATE_KEY).decode('hex'))
+            pubkey_data = key.get_pubkey()
+            signed_data = key.sign(dhash)
+            scriptSig = chr(len(signed_data)) + signed_data + chr(len(pubkey_data)) + pubkey_data
+            print binascii.hexlify(scriptSig)
+            txin.scriptSig = scriptSig
         return tx

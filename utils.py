@@ -87,16 +87,25 @@ def public_key_hex_to_pay_to_pubkey(public_key_hex):
         
 def address_to_pay_to_pubkey_hash(address):
     pubkey_hash = address_to_public_key_hash(address)
-    script = str(hex(OP_DUP)[2:]) + str(hex(OP_HASH160)[2:]) + "14" + str(binascii.hexlify(pubkey_hash)) + str(hex(OP_EQUALVERIFY)[2:]) + str(hex(OP_CHECKSIG)[2:])
+    script = "76A914" + str(binascii.hexlify(pubkey_hash)) + "88AC"
+    print script
+    # script = str(hex(OP_DUP)[2:]) + str(hex(OP_HASH160)[2:]) + "14" + str(binascii.hexlify(pubkey_hash)) + str(hex(OP_EQUALVERIFY)[2:]) + str(hex(OP_CHECKSIG)[2:])
     return binascii.unhexlify(script)
-    """
-    76      A9          14              89 AB CD EF AB BA AB BA AB BA AB BA AB BA AB BA AB BA AB BA     88              AC
-    OP_DUP  OP_HASH160  Bytes to push   Data to push                                                    OP_EQUALVERIFY  OP_CHECKSIG
-    """
 
 def output_script_to_public_key_hash(script):
-    script_key_hash = binascii.hexlify(myhash160(bytearray.fromhex(binascii.hexlify(script[1:-1]))))
-    return script_key_hash
+    # better matching .. but for now . .. this should work
+    if not script:
+        return
+    # is the script is a standard generation address
+    if binascii.hexlify(script[:1]) == "41":
+        return binascii.hexlify(myhash160(bytearray.fromhex(binascii.hexlify(script[1:-1]))))
+    # is the script is a standard transaction address
+    elif binascii.hexlify(script[:3]) == "76a914":
+        return binascii.hexlify(script[3:-2])
+    else:
+        pass
+        #print "Error scritpt: ", binascii.hexlify(script)
+    return None
 
 """
 # Output script to address representation
