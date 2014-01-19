@@ -92,6 +92,11 @@ def address_to_pay_to_pubkey_hash(address):
     # script = str(hex(OP_DUP)[2:]) + str(hex(OP_HASH160)[2:]) + "14" + str(binascii.hexlify(pubkey_hash)) + str(hex(OP_EQUALVERIFY)[2:]) + str(hex(OP_CHECKSIG)[2:])
     return binascii.unhexlify(script)
 
+def sriptSig_to_pubkey(script):
+    len_signed_data = ord(script[0])
+    len_pubkey_data = ord(script[len_signed_data:len_signed_data+1])
+    return script[-len_pubkey_data:]
+    
 def output_script_to_public_key_hash(script):
     # better matching .. but for now . .. this should work
     if not script:

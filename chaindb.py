@@ -15,6 +15,7 @@ import shutil
 from decimal import Decimal
 from cache import Cache
 
+from common import *
 from bitcoin.serialize import *
 from bitcoin.core import *
 from bitcoin.messages import msg_block, message_to_str, message_read
@@ -139,8 +140,8 @@ class ChainDb(object):
     def getbalance(self, address):
         balance = 0.0
         txouts = self.listreceivedbyaddress(address)
-        for txout in txouts.itervalues():
-            balance = balance + txout['value']
+        for txout in txouts:
+            balance = balance + txout.value
         return balance
         """
         end_height = self.getheight()
@@ -175,7 +176,7 @@ class ChainDb(object):
     def sendtoaddress(self, toaddress, amount):
         tx = self.wallet.sendtoaddress(toaddress, amount)
         self.mempool.add(tx)
-        print "Added to memopool >>>>>>>>>>>>>>>>>>>>>>>>>."
+        print "Added to memopool"
 
     def listreceivedbyaddress(self, address):
         txouts = {}
@@ -201,8 +202,8 @@ class ChainDb(object):
                     script_key_hash = utils.output_script_to_public_key_hash(txout.scriptPubKey)
                     if script_key_hash == public_key_hash:
                         tx.calc_sha256()
-                        txouts[tx.sha256] = {'txhash': tx.sha256, 'n': n, 'value': txout.nValue}
-        return txouts
+                        txouts[tx.sha256] = Received(tx.sha256, n, txout.nValue, txout.scriptPubKey)
+        return txouts.values()
 
     def gettxidx(self, txhash):
         ser_txhash = ser_uint256(txhash)

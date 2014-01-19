@@ -1,3 +1,5 @@
+import collections
+
 MY_SUBVERSION = "/pynode:0.0.1/"
 
 debugnet = False
@@ -22,3 +24,6 @@ def verbose_recvmsg(message):
     if message.command in skipmsg:
         return False
     return True
+
+Received = collections.namedtuple('Received', 'txhash n value scriptPubKey')
+

@@ -5,6 +5,7 @@ from bsddb.db import *
 from pickle import dumps, loads
 
 import binascii
+from bitcoin.key import CKey
 from bitcoin.core import COutPoint, CTxIn, CTxOut, CTransaction
 
 
@@ -15,6 +16,7 @@ import ctypes.util
 import sys
 import utils
 
+
 ssl = ctypes.cdll.LoadLibrary (ctypes.util.find_library ('ssl') or 'libeay32')
 
 def check_result (val, func, args):
@@ -24,63 +26,6 @@ def check_result (val, func, args):
 ssl.EC_KEY_new_by_curve_name.restype = ctypes.c_void_p
 ssl.EC_KEY_new_by_curve_name.errcheck = check_result
 
-class KEY:
-    def __init__(self):
-        NID_secp256k1 = 714
-        self.k = ssl.EC_KEY_new_by_curve_name(NID_secp256k1)
-        self.compressed = False
-        self.POINT_CONVERSION_COMPRESSED = 2
-        self.POINT_CONVERSION_UNCOMPRESSED = 4
-
-    def __del__(self):
-        if ssl:
-            ssl.EC_KEY_free(self.k)
-        self.k = None
-
-    def generate(self, secret=None):
-        if secret:
-            self.prikey = secret
-            priv_key = ssl.BN_bin2bn(secret, 32, ssl.BN_new())
-            group = ssl.EC_KEY_get0_group(self.k)
-            pub_key = ssl.EC_POINT_new(group)
-            ctx = ssl.BN_CTX_new()
-            ssl.EC_POINT_mul(group, pub_key, priv_key, None, None, ctx)
-            ssl.EC_KEY_set_private_key(self.k, priv_key)
-            ssl.EC_KEY_set_public_key(self.k, pub_key)
-            ssl.EC_POINT_free(pub_key)
-            ssl.BN_CTX_free(ctx)
-            return self.k
-        else:
-            return ssl.EC_KEY_generate_key(self.k)
-
-    def get_pubkey(self):
-        size = ssl.i2o_ECPublicKey(self.k, 0)
-        mb = ctypes.create_string_buffer(size)
-        ssl.i2o_ECPublicKey(self.k, ctypes.byref(ctypes.pointer(mb)))
-        return mb.raw
-
-    def get_secret(self):
-        bn = ssl.EC_KEY_get0_private_key(self.k);
-        bytes = (ssl.BN_num_bits(bn) + 7) / 8
-        mb = ctypes.create_string_buffer(bytes)
-        n = ssl.BN_bn2bin(bn, mb);
-        return mb.raw.rjust(32, chr(0))
-
-    def set_compressed(self, compressed):
-        self.compressed = compressed
-        if compressed:
-            form = self.POINT_CONVERSION_COMPRESSED
-        else:
-            form = self.POINT_CONVERSION_UNCOMPRESSED
-        ssl.EC_KEY_set_conv_form(self.k, form)
-
-def dhash(s):
-    return hashlib.sha256(hashlib.sha256(s).digest()).digest()
-
-def rhash(s):
-    h1 = hashlib.new('ripemd160')
-    h1.update(hashlib.sha256(s).digest())
-    return h1.digest()
 
 b58_digits = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
@@ -137,8 +82,28 @@ def base58_check_decode(s, version=0):
         raise BaseException('version mismatch')
     return data
 
+def dhash(s):
+    return hashlib.sha256(hashlib.sha256(s).digest()).digest()
+
+def rhash(s):
+    h1 = hashlib.new('ripemd160')
+    h1.update(hashlib.sha256(s).digest())
+    return h1.digest()
+    
+def get_addr(k, version=0):
+    pubkey = k.get_pubkey()
+    secret = k.get_secret()
+    hash160 = rhash(pubkey)
+    addr = base58_check_encode(hash160,version)
+    payload = secret
+    k.compressed = True
+    if k.compressed:
+        payload = secret + chr(1)
+    pkey = base58_check_encode(payload, 128+version)
+    return addr, pkey, binascii.hexlify(pubkey)
+    
 def gen_eckey(passphrase=None, secret=None, pkey=None, compressed=False, rounds=1, version=0):
-    k = KEY()
+    k = CKey()
     if passphrase:
         secret = passphrase.encode('utf8')
         for i in xrange(rounds):
@@ -150,29 +115,15 @@ def gen_eckey(passphrase=None, secret=None, pkey=None, compressed=False, rounds=
     k.generate(secret)
     k.set_compressed(compressed)
     return k
-
-def get_addr(k,version=0):
-    pubkey = k.get_pubkey()
-    secret = k.get_secret()
-    hash160 = rhash(pubkey)
-    addr = base58_check_encode(hash160,version)
-    payload = secret
-    if k.compressed:
-        payload = secret + chr(1)
-    pkey = base58_check_encode(payload, 128+version)
-    return addr, pkey, binascii.hexlify(pubkey)
-
-def reencode(pkey,version=0):
-    payload = base58_check_decode(pkey,128+version)
-    secret = payload[:-1]
-    payload = secret + chr(1)
-    pkey = base58_check_encode(payload, 128+version)
-    print get_addr(gen_eckey(pkey))
-
-def scan_block(index, address):
-    return 1.0
-
-
+    
+# helper functions
+def getnewsubaccount():
+    key = gen_eckey()
+    address, private_key, public_key = get_addr(key)
+    print "Address: ", address
+    print "Private key: ", private_key
+    print "Public key: ", public_key
+    return {"address": address, "public_key": public_key, "private_key": private_key, "balance": 0.0, 'height' : 0, 'received' : []}
 
 # Wallet class
 class Wallet(object):
@@ -181,8 +132,7 @@ class Wallet(object):
         self.walletdir = os.path.split(self.walletfile)[0]
         self.db_env = DBEnv(0)
         self.db_env.open(self.walletdir, (DB_CREATE|DB_INIT_LOCK|DB_INIT_LOG|DB_INIT_MPOOL|DB_INIT_TXN|DB_THREAD|DB_RECOVER))
-    
-    
+        
     # open wallet database
     def open(self, writable=False):
 	    db = DB(self.db_env)
@@ -199,138 +149,116 @@ class Wallet(object):
 		    logging.error("Couldn't open wallet.dat/main. Try quitting Bitcoin and running this again.")
 		    sys.exit(1)
 	    return db
-	
-	    	
+    	
     # if wallet does not exist, create it
     def initialize(self):
         if not os.path.isfile(self.walletfile):
             walletdb = self.open(writable = True)
             print "Initilizing wallet"
-            key = gen_eckey()
-            address, private_key, public_key = get_addr(key)
-            walletdb['account'] = dumps([{"public_key": public_key, "private_key": private_key, "address": address, "balance": 0.0, 'height' : 0, 'received' : []}])
+            subaccount = getnewsubaccount()
+            walletdb['account'] = dumps({subaccount['address']: subaccount})
             walletdb['accounts'] = dumps(['account'])
             walletdb.sync()
             walletdb.close()
-    
-    
+
+    # return an account
+    def getaccount(self, accountname = None):
+        if not accountname:
+            accountname = "account"
+        walletdb = self.open()
+        # if wallet is not initialized, return
+        if 'accounts' not in walletdb:
+            print "Wallet not initialized ... quitting!"
+            return None
+        # if wallet is initialized
+        accountnames = loads(walletdb['accounts'])
+        if accountname not in accountnames:
+            print "Error: Account not found"
+            return
+        # if account is in wallet
+        account = loads(walletdb['account']) # FIXME: account = loads(walletdb[accountname])
+        walletdb.close()
+        return account
+
+    # getaccounts
+    def getaccounts(self):
+        accounts = []
+        walletdb = self.open()
+        # if wallet is not initialized, return
+        if 'accounts' not in walletdb:
+            print "Wallet not initialized ... quitting!"
+            return None
+        # wallet is initialized
+        accountnames = loads(walletdb['accounts'])
+        walletdb.close()
+        for accountname in accountnames:
+            account = loads(walletdb[accountname])
+            accounts.append(account)
+        return accounts
+                            
     # create and return a new address
-    def getnewaddress(self, account = None):
-        if not account:
-            account = "account"
-        key = gen_eckey()
-        address, private_key, public_key = get_addr(key)
-        addressmap = {"public_key": public_key, "private_key": private_key, "address": address, "balance": 0.0, "height" : 0}
+    def getnewaddress(self, accountname = None):
+        if not accountname:
+            accountname = "account"
         walletdb = self.open(writable = True)
         # if wallet is not initialized
         if 'accounts' not in walletdb:
             print "Wallet not initialized ... quitting!"
             return None
-        # wallet is initialized
-        accounts = loads(walletdb['accounts'])
-        if account in accounts:
-            addressmaplist = loads(walletdb[account])
-            addressmaplist.append(addressmap)
+        # if wallet is initialized
+        subaccount = getnewsubaccount()
+        accountnames = loads(walletdb['accounts'])
+        if accountname in accountnames:
+            account = loads(walletdb[accountname])
+            account[subaccount['address']] = subaccount
         else:
-            print "account: ", account, " not in accounts"
+            print "account: ", accountname, " not in accounts"
             print "creating new account" 
-            addressmaplist = [addressmap]
-        walletdb[account] = dumps(addressmaplist)
+            account = {subaccount['address']: subaccount}
+            # add the new account name to account names
+            walletdb['accounts'] = dumps(accountnames.append(accountname))
+        walletdb[accountname] = dumps(account)
         walletdb.sync()
         walletdb.close()
-        return public_key, address
-
-    # return an account
-    def getaccount(self, account = None):
-        if not account:
-            account = "account"
-        account = "account"
-        walletdb = self.open()
-        # if wallet is not initialized, return
-        if 'accounts' not in walletdb:
-            print "Wallet not initialized ... quitting!"
-            return None
-        # wallet is initialized
-        accounts = loads(walletdb['accounts'])
-        if account not in accounts:
-            print "Error: Account nto found"
-            return
-        # if account is wallet 
-        addressmaplist = loads(walletdb[account])
-        walletdb.close()
-        return addressmaplist
-
-    # getaccounts  
-    def getaccounts(self):
-        walletdb = self.open()
-        # if wallet is not initialized, return
-        if 'accounts' not in walletdb:
-            print "Wallet not initialized ... quitting!"
-            return None
-        # wallet is initialized
-        accounts = loads(walletdb['accounts'])
-        walletdb.close()
-        for account in accounts:
-            addressmaplist = loads(walletdb[account])
-            print addressmaplist
-        return
+        return subaccount['public_key'], subaccount['address']
     
-    # retrn balance of an account
-    def getbalance(self, account):
-        if not account:
-            account = "account"
-        account = "account"
+    # return balance of an account
+    def getbalance(self, accountname):
+        if not accountname:
+            accountname = "account"
         walletdb = self.open()
         # if wallet is not initialized, return
         if 'accounts' not in walletdb:
             print "Wallet not initialized ... quitting!"
             return None
-        # wallet is initialized
-        accounts = loads(walletdb['accounts'])
-        if account not in accounts:
+        # if wallet is initialized
+        accountnames = loads(walletdb['accounts'])
+        if accountname not in accountnames:
             print "Error: Account not found"
             return
-        # if account is wallet 
-        addressmaplist = loads(walletdb[account])
+        # if account is in wallet
+        account = loads(walletdb['account']) # FIXME: account = loads(walletdb[accountname])
         walletdb.close()
-        for addressmap in addressmaplist:
-            addressmap['balance'] = self.chaindb.getbalance(addressmap['address'])
-        return addressmaplist
-        
-        """
-        walletdb = open_wallet(db_env, walletfile, writable = True)
-        # get account
-        accountinfo = loads(walletdb[account])
-        public_key = accountinfo['public_key']
-        private_key = accountinfo['private_key']
-        address = accountinfo['address']
-        balance = accountinfo['balance']
-        height = accountinfo['height']
-        
-        print "\t Public key: ", public_key
-        print "\tPrivate key: ", private_key
-        print "\tAddress: ", address
-        print "\tBalance: ", balance
-        walletdb[account] = dumps({"public_key": "Public key", "private_key": private_key, "address": address, "balance": balance, "height" : height})
-        walletdb.close()
-        """
+        print account
+        for address, subaccount in account.iteritems():
+            subaccount['balance'] = self.chaindb.getbalance(subaccount['address'])
+        return account
 
     # send to an address
-    def sendtoaddress(self, toaddress, amount):
-        addressmaplist = self.getbalance('account')
-        
-        # get the input addresses
+    def sendtoaddress(self, toaddress, amount):        
+        # select the input addresses
         funds = 0
-        from_addresses = []
-        addressmaplist = self.getbalance('account')
-        for addressmap in addressmaplist:
-            if addressmap['balance'] == 0:
-                continue
-            else:
-                from_addresses.append({'from_address': addressmap['address'], 'from_public_key_hex': addressmap['public_key']})
-                funds = funds + addressmap['balance']
-                if funds >= amount + utils.calculate_fees(None):
-                    break
+        subaccounts = []
+        accounts = self.getaccounts()
+        for account in accounts:
+            for subaccount in account:
+                if subaccount['balance'] == 0:
+                    continue
+                else:
+                    subaccounts.append(subaccount)
+                    funds = funds + subaccount['balance']
+                    if funds >= amount + utils.calculate_fees(None):
+                        break
         
         # incase of insufficient funds, return
         if funds < amount + utils.calculate_fees(None):
@@ -348,20 +276,21 @@ class Wallet(object):
         
         # from the sender
         nValueIn = 0
-        keychain = {}
-        for from_address in from_addresses:
+        public_keys = []
+        private_keys = []
+        for subaccount in subaccounts:
             # get received by from address
-            previous_txouts = self.chaindb.listreceivedbyaddress(from_address['from_address']) # will it be better if we return the transactions them selves?
-            for previous_hash, previous_txout in previous_txouts.iteritems():
+            previous_txouts = subaccount['received']
+            for received in previous_txouts.iteritems():
                 txin = CTxIn()
                 txin.prevout = COutPoint()
-                txin.prevout.hash = previous_txout['txhash'] # same as previous_hash?
-                txin.prevout.n = previous_txout['n']
-                prevtx = self.chaindb.gettx(tin.prevout.hash)
-                txin.scriptSig = prevtx.vout[txin.prevout.n].scriptPubKey
+                txin.prevout.hash = received['txhash']
+                txin.prevout.n = received['n']
+                txin.scriptSig = received[txin.prevout.n].scriptPubKey
                 tx.vin.append(txin)
-                nValueIn = nValueIn + previous_txout['value']
-                keychain[
+                nValueIn = nValueIn + received['value']
+                public_keys.append(subaccount['public_key'])
+                private_keys.append(subaccount['private_key'])
                 if nValueIn >= amount + utils.calculate_fees(tx):
                     break
             if nValueIn >= amount + utils.calculate_fees(tx):
@@ -375,20 +304,20 @@ class Wallet(object):
         if excessAmount > fees:
             change_txout = CTxOut()
             change_txout.nValue = excessAmount - fees
-            fromaddress = from_addresses[0]['from_address']
-            change_txout.scriptPubKey = utils.address_to_pay_to_pubkey_hash(fromaddress)
+            changeaddress = subaccounts[0]['address']
+            change_txout.scriptPubKey = utils.address_to_pay_to_pubkey_hash(changeaddress)
             tx.vout.append(change_txout)
         
         # calculate txhash
         tx.calc_sha256()
         txhash = tx.sha256
         # sign the transaction
-        for txin in tx.vin:
+        for public_key, private_key, txin in zip(public_key, private_keys, tx.vin):
             key = CKey()
-            key.generate(('%064x' % PRIVATE_KEY).decode('hex'))
+            key.generate(('%064x' % private_key).decode('hex'))
             pubkey_data = key.get_pubkey()
-            signed_data = key.sign(dhash)
-            scriptSig = chr(len(signed_data)) + signed_data + chr(len(pubkey_data)) + pubkey_data
-            print binascii.hexlify(scriptSig)
+            signature = key.sign(txhash)
+            scriptSig = chr(len(signature)) + hash_type + signature + chr(len(public_key)) + public_key
+            print "Adding signature: ", binascii.hexlify(scriptSig)
             txin.scriptSig = scriptSig
         return tx

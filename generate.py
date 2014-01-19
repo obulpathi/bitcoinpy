@@ -1,7 +1,9 @@
 import hashlib
+import binascii
 from bitcoin.key import CKey as Key
 from bitcoin.base58 import encode, decode
 
+# bitcoin addresses testing: http://gobittest.appspot.com/
 # validate: https://en.bitcoin.it/wiki/Technical_background_of_Bitcoin_addresses
 
 def MyHash(s):
@@ -14,17 +16,22 @@ def MyHash160(s):
     
 # Generate public and private keys
 key = Key()
+# key.set_privkey(0x18E14A7B6A307F426A94F8114701E7C8E774E7F9A47E2C2035DB29A206321725)
+# key.set_pubkey(bytearray.fromhex("0450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B23522CD470243453A299FA9E77237716103ABC11A1DF38855ED6F2EE187E9C582BA6"))
 key.generate()
 key.set_compressed(True)
 private_key = key.get_privkey()
 public_key = key.get_pubkey()
+secret = key.get_secret()
 private_key_hex = private_key.encode('hex')
 public_key_hex = public_key.encode('hex')
-# print "Private key: ", private_key
-# print "Public key: ", public_key
+secret_hex = binascii.hexlify(secret)
+print "Private key: ", private_key_hex
+print "Public key: ", public_key_hex
+print "secret    : ", secret_hex
 
 public_key = bytearray.fromhex(public_key_hex)
-public_key = bytearray.fromhex("0450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B23522CD470243453A299FA9E77237716103ABC11A1DF38855ED6F2EE187E9C582BA6")
+# public_key = bytearray.fromhex("0450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B23522CD470243453A299FA9E77237716103ABC11A1DF38855ED6F2EE187E9C582BA6")
 
 # Perform SHA-256 and RIPEMD-160 hashing on public key
 hash160_address = MyHash160(public_key)

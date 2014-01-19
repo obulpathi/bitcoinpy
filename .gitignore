@@ -7,3 +7,4 @@ main.py
 tmp*
 tags
 bitcoin/
+tools/wallet.py
