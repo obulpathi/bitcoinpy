@@ -140,8 +140,8 @@ class ChainDb(object):
     def getbalance(self, address):
         balance = 0.0
         txouts = self.listreceivedbyaddress(address)
-        for txout in txouts:
-            balance = balance + txout.value
+        for txout in txouts.itervalues():
+            balance = balance + txout['value']
         return balance
         """
         end_height = self.getheight()
@@ -202,8 +202,8 @@ class ChainDb(object):
                     script_key_hash = utils.output_script_to_public_key_hash(txout.scriptPubKey)
                     if script_key_hash == public_key_hash:
                         tx.calc_sha256()
-                        txouts[tx.sha256] = Received(tx.sha256, n, txout.nValue, txout.scriptPubKey)
-        return txouts.values()
+                        txouts[tx.sha256] = {'txhash': tx.sha256, 'n': n, 'value': txout.nValue, 'scriptPubKey': binascii.hexlify(txout.scriptPubKey)}
+        return txouts
 
     def gettxidx(self, txhash):
         ser_txhash = ser_uint256(txhash)

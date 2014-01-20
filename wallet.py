@@ -190,10 +190,13 @@ class Wallet(object):
             return None
         # wallet is initialized
         accountnames = loads(walletdb['accounts'])
-        walletdb.close()
         for accountname in accountnames:
             account = loads(walletdb[accountname])
             accounts.append(account)
+        walletdb.close()
+        for account in accounts:
+            for address, subaccount in account.iteritems():
+                subaccount['balance'] = self.chaindb.getbalance(subaccount['address'])
         return accounts
                             
     # create and return a new address
@@ -239,9 +242,14 @@ class Wallet(object):
         # if account is in wallet
         account = loads(walletdb['account']) # FIXME: account = loads(walletdb[accountname])
         walletdb.close()
-        print account
         for address, subaccount in account.iteritems():
-            subaccount['balance'] = self.chaindb.getbalance(subaccount['address'])
+            transactions = self.chaindb.listreceivedbyaddress(subaccount['address'])
+            subaccount['balance'] = 0
+            print transactions
+            for transaction in transactions.itervalues():
+                print transaction
+                subaccount['balance'] = subaccount['balance'] + transaction['value']
+            subaccount['received'] = transactions
         return account
 
     # send to an address
@@ -251,7 +259,7 @@ class Wallet(object):
         subaccounts = []
         accounts = self.getaccounts()
         for account in accounts:
-            for subaccount in account:
+            for address, subaccount in account.iteritems():
                 if subaccount['balance'] == 0:
                     continue
                 else:
@@ -276,17 +284,19 @@ class Wallet(object):
         
         # from the sender
         nValueIn = 0
+        nValueOut = amount
         public_keys = []
         private_keys = []
         for subaccount in subaccounts:
             # get received by from address
             previous_txouts = subaccount['received']
-            for received in previous_txouts.iteritems():
+            print previous_txouts
+            for received in previous_txouts:
                 txin = CTxIn()
                 txin.prevout = COutPoint()
                 txin.prevout.hash = received['txhash']
                 txin.prevout.n = received['n']
-                txin.scriptSig = received[txin.prevout.n].scriptPubKey
+                txin.scriptSig = binascii.unhexlify(received[txin.prevout.n].scriptPubKey)
                 tx.vin.append(txin)
                 nValueIn = nValueIn + received['value']
                 public_keys.append(subaccount['public_key'])
@@ -312,7 +322,7 @@ class Wallet(object):
         tx.calc_sha256()
         txhash = tx.sha256
         # sign the transaction
-        for public_key, private_key, txin in zip(public_key, private_keys, tx.vin):
+        for public_key, private_key, txin in zip(public_keys, private_keys, tx.vin):
             key = CKey()
             key.generate(('%064x' % private_key).decode('hex'))
             pubkey_data = key.get_pubkey()
