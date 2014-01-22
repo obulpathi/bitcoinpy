@@ -273,7 +273,6 @@ class RPCExec(object):
         return (self.chaindb.listreceivedbyaddress(params[0]), None)
 
     def sendtoaddress(self, params):
-        print("RPC: sending to chaindb")
         return (self.chaindb.sendtoaddress(params[0], params[1]), None)
 
     def submitblock(self, params):

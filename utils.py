@@ -112,6 +112,15 @@ def output_script_to_public_key_hash(script):
         #print "Error scritpt: ", binascii.hexlify(script)
     return None
 
+def scriptSig_to_public_key_hash(script):
+    if not script:
+        return
+    # remove the signature
+    signature_length = ord(script[:1])
+    script = script[1 + signature_length:]
+    # remove pubkey length and return
+    return script [1:]
+    
 """
 # Output script to address representation
 def script_to_address(script,vbyte=0):

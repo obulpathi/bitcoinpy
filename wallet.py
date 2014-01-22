@@ -92,6 +92,7 @@ def rhash(s):
     
 def get_addr(k, version=0):
     pubkey = k.get_pubkey()
+    privkey = k.get_privkey()
     secret = k.get_secret()
     hash160 = rhash(pubkey)
     addr = base58_check_encode(hash160,version)
@@ -100,7 +101,7 @@ def get_addr(k, version=0):
     if k.compressed:
         payload = secret + chr(1)
     pkey = base58_check_encode(payload, 128+version)
-    return addr, pkey, binascii.hexlify(pubkey)
+    return addr, binascii.hexlify(privkey), binascii.hexlify(pubkey), binascii.hexlify(secret)
     
 def gen_eckey(passphrase=None, secret=None, pkey=None, compressed=False, rounds=1, version=0):
     k = CKey()
@@ -119,11 +120,12 @@ def gen_eckey(passphrase=None, secret=None, pkey=None, compressed=False, rounds=
 # helper functions
 def getnewsubaccount():
     key = gen_eckey()
-    address, private_key, public_key = get_addr(key)
+    address, private_key, public_key, secret = get_addr(key)
     print "Address: ", address
-    print "Private key: ", private_key
-    print "Public key: ", public_key
-    return {"address": address, "public_key": public_key, "private_key": private_key, "balance": 0.0, 'height' : 0, 'received' : []}
+    print "Private key: ", type(private_key), private_key
+    print "Public key: ", type(public_key), public_key
+    print "secret: ", type(secret), secret
+    return {"address": address, "public_key": public_key, "private_key": private_key, "secret": secret, "balance": 0.0, 'height' : 0, 'received' : []}
 
 # Wallet class
 class Wallet(object):
@@ -197,6 +199,7 @@ class Wallet(object):
         for account in accounts:
             for address, subaccount in account.iteritems():
                 subaccount['balance'] = self.chaindb.getbalance(subaccount['address'])
+                subaccount['received'] = self.chaindb.listreceivedbyaddress(subaccount['address']).values()
         return accounts
                             
     # create and return a new address
@@ -264,10 +267,13 @@ class Wallet(object):
                     continue
                 else:
                     subaccounts.append(subaccount)
+                    # print "got one subaccount", subaccount
+                    # print "subaccounts: ", subaccounts
                     funds = funds + subaccount['balance']
                     if funds >= amount + utils.calculate_fees(None):
                         break
         
+        # print "subaccounts 2: ", subaccounts
         # incase of insufficient funds, return
         if funds < amount + utils.calculate_fees(None):
             print "In sufficient funds, exiting, return"
@@ -276,6 +282,7 @@ class Wallet(object):
         # create transaction
         tx = CTransaction()
         
+        # print "subaccounts 3: ", subaccounts
         # to the receiver
         txout = CTxOut()
         txout.nValue = amount
@@ -287,20 +294,24 @@ class Wallet(object):
         nValueOut = amount
         public_keys = []
         private_keys = []
+        secrets = []
+        # print "subaccounts 4: ", subaccounts
         for subaccount in subaccounts:
+            # print "subaccount: ", subaccount
             # get received by from address
             previous_txouts = subaccount['received']
-            print previous_txouts
+            # print "Previous txouts", previous_txouts
             for received in previous_txouts:
                 txin = CTxIn()
                 txin.prevout = COutPoint()
                 txin.prevout.hash = received['txhash']
                 txin.prevout.n = received['n']
-                txin.scriptSig = binascii.unhexlify(received[txin.prevout.n].scriptPubKey)
+                txin.scriptSig = binascii.unhexlify(received['scriptPubKey'])
                 tx.vin.append(txin)
                 nValueIn = nValueIn + received['value']
-                public_keys.append(subaccount['public_key'])
+                public_keys.append(subaccount['public_key']) 
                 private_keys.append(subaccount['private_key'])
+                secrets.append(subaccount['secret'])
                 if nValueIn >= amount + utils.calculate_fees(tx):
                     break
             if nValueIn >= amount + utils.calculate_fees(tx):
@@ -320,14 +331,17 @@ class Wallet(object):
         
         # calculate txhash
         tx.calc_sha256()
-        txhash = tx.sha256
+        txhash = str(tx.sha256)
         # sign the transaction
-        for public_key, private_key, txin in zip(public_keys, private_keys, tx.vin):
+        for public_key, private_key, secret, txin in zip(public_keys, private_keys, secrets, tx.vin):
             key = CKey()
-            key.generate(('%064x' % private_key).decode('hex'))
+            print "Private key: ", private_key
+            key.generate(binascii.unhexlify(secret))
             pubkey_data = key.get_pubkey()
             signature = key.sign(txhash)
-            scriptSig = chr(len(signature)) + hash_type + signature + chr(len(public_key)) + public_key
+            # scriptSig = chr(len(signature)) + hash_type + signature + chr(len(public_key)) + public_key
+            scriptSig = chr(len(signature)) + signature + chr(len(public_key)) + public_key
             print "Adding signature: ", binascii.hexlify(scriptSig)
             txin.scriptSig = scriptSig
+            print "Validity >>>>>>>>>>>>>>>>>: ", tx.is_valid()
         return tx
