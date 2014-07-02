@@ -1,0 +1,6 @@
+BitcoinArmory:
+* @Github: https://github.com/etotheipi/BitcoinArmory
+* python code for generating bitcoin addresses
+* python code for generating transactions
+* RPCs for wallet functions and more
+* a Python-Qt client
