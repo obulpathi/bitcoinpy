@@ -1,2 +1,2 @@
-pip
-
+gevent
+python-leveldb

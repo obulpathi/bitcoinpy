@@ -2,9 +2,10 @@
 *.log
 *.swp
 *.bak
+env/
 block0.dat
 main.py
 tmp*
 tags
-bitcoin/
 tools/wallet.py
+wallet/p2sh_send.py
