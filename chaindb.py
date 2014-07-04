@@ -840,8 +840,8 @@ class ChainDb(object):
 
         txout = CTxOut()
         txout.nValue = block_value(self.getheight(), total_fees)
-        public_key_hex, address = self.wallet.getnewaddress()
-        txout.scriptPubKey = utils.public_key_hex_to_pay_to_pubkey(public_key_hex)
+        public_key, address = self.wallet.getnewaddress()
+        txout.scriptPubKey = utils.public_key_to_pay_to_pubkey(public_key)
 
         coinbase = CTransaction()
         coinbase.vin.append(txin)

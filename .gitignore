@@ -8,5 +8,5 @@ main.py
 tmp*
 tags
 tools/wallet.py
-wallet/p2sh_send.py
+walletrpc/p2sh_send.py
 tools/bitcoin

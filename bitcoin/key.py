@@ -68,7 +68,7 @@ class CKey:
         mb = ctypes.create_string_buffer(size)
         ssl.i2o_ECPublicKey(self.k, ctypes.byref(ctypes.pointer(mb)))
         return mb.raw
-
+        
     def sign(self, hash):
         sig_size0 = ctypes.c_uint32()
         sig_size0.value = ssl.ECDSA_size(self.k)
@@ -87,6 +87,36 @@ class CKey:
             form = self.POINT_CONVERSION_UNCOMPRESSED
         ssl.EC_KEY_set_conv_form(self.k, form)
 
+def test1():
+    k = CKey()
+    k.generate (ec_secret.decode('hex'))
+    k.set_compressed(True)
+    print(k.get_privkey ().encode('hex'))
+    print(k.get_pubkey().encode('hex'))
+    # not sure this is needed any more: print k.get_secret().encode('hex')
+
+    hash = 'Hello, world!'
+    print(k.verify(hash, k.sign(hash)))
+
+def test2():
+    k1 = CKey()
+    k2 = CKey()
+    k3 = CKey()
+    k1.generate()
+    k3.generate()
+    k2.set_privkey(k1.get_privkey())
+    k2.set_pubkey(k1.get_pubkey())
+    hash = 'Hello, world!'
+    print(k1.verify(hash, k1.sign(hash)))
+    print(k2.verify(hash, k2.sign(hash)))
+    print(k3.verify(hash, k3.sign(hash)))
+    print(k1.verify(hash, k2.sign(hash)))
+    print(k2.verify(hash, k1.sign(hash)))
+    print(k1.verify(hash, k3.sign(hash)))
+    print(k3.verify(hash, k1.sign(hash)))
+    print(k2.verify(hash, k3.sign(hash)))
+    print(k3.verify(hash, k2.sign(hash)))
+    
 if __name__ == '__main__':
     # ethalone keys
     ec_secret = '' + \
@@ -103,12 +133,5 @@ if __name__ == '__main__':
         '0791dc70b75aa995213244ad3f4886d74d61ccd3ef658243fcad14c9ccee2b0a' + \
         'a762fbc6ac0921b8f17025bb8458b92794ae87a133894d70d7995fc0b6b5ab90'
 
-    k = CKey()
-    k.generate (ec_secret.decode('hex'))
-    k.set_compressed(True)
-    print(k.get_privkey ().encode('hex'))
-    print(k.get_pubkey().encode('hex'))
-    # not sure this is needed any more: print k.get_secret().encode('hex')
-
-    hash = 'Hello, world!'
-    print(k.verify(hash, k.sign(hash)))
+    #test1(ec_secret, ec_private)
+    test2()

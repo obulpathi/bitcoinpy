@@ -73,7 +73,7 @@ class BitcoinRPC:
         return self.rpc('getblockcount')
     def getwork(self, data=None):
         print "Sleeping before going for get work"
-        sleep(60)
+        sleep(5)
         return self.rpc('getwork', data)
 
 def uint32(x):

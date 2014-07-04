@@ -15,17 +15,40 @@ import ctypes
 import ctypes.util
 import sys
 import utils
+#import base58
 
+
+"""
+walletdb: wallet data structure
+    accounts: accounts
+        account: the default account
+            subaccount: 
+                address: address
+                public_key: public_key
+                private_key: private_key
+                # secret: secret: 
+                balance: 0.0
+                height: 0
+                received : []
+
+Note:
+    For EC keys, don't use secret based key generation.
+    Only use the keys in default form (No compress or uncompress)
+"""
 
 ssl = ctypes.cdll.LoadLibrary (ctypes.util.find_library ('ssl') or 'libeay32')
+ssl.EC_KEY_new_by_curve_name.restype = ctypes.c_void_p
 
 def check_result (val, func, args):
     if val == 0: raise ValueError 
     else: return ctypes.c_void_p (val)
 
-ssl.EC_KEY_new_by_curve_name.restype = ctypes.c_void_p
+
 ssl.EC_KEY_new_by_curve_name.errcheck = check_result
 
+"""
+refactor the base58 functions and module to bitcoin lib
+"""
 
 b58_digits = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
@@ -89,20 +112,20 @@ def rhash(s):
     h1 = hashlib.new('ripemd160')
     h1.update(hashlib.sha256(s).digest())
     return h1.digest()
-    
+
+"""    
 def get_addr(k, version=0):
     pubkey = k.get_pubkey()
     privkey = k.get_privkey()
-    secret = k.get_secret()
     hash160 = rhash(pubkey)
-    addr = base58_check_encode(hash160,version)
-    payload = secret
-    k.compressed = True
-    if k.compressed:
-        payload = secret + chr(1)
-    pkey = base58_check_encode(payload, 128+version)
-    return addr, binascii.hexlify(privkey), binascii.hexlify(pubkey), binascii.hexlify(secret)
-    
+    addr = base58_check_encode(hash160, version)
+    return addr, binascii.hexlify(privkey), binascii.hexlify(pubkey)
+"""
+
+def pubkey_to_address(pubkey, version=0):
+    hash160 = rhash(pubkey)
+    return base58_check_encode(hash160, version)
+        
 def gen_eckey(passphrase=None, secret=None, pkey=None, compressed=False, rounds=1, version=0):
     k = CKey()
     if passphrase:
@@ -117,16 +140,6 @@ def gen_eckey(passphrase=None, secret=None, pkey=None, compressed=False, rounds=
     k.set_compressed(compressed)
     return k
     
-# helper functions
-def getnewsubaccount():
-    key = gen_eckey()
-    address, private_key, public_key, secret = get_addr(key)
-    print "Address: ", address
-    print "Private key: ", type(private_key), private_key
-    print "Public key: ", type(public_key), public_key
-    print "secret: ", type(secret), secret
-    return {"address": address, "public_key": public_key, "private_key": private_key, "secret": secret, "balance": 0.0, 'height' : 0, 'received' : []}
-
 # Wallet class
 class Wallet(object):
     def __init__(self, walletfile = "~/.bitcoinpy/wallet.dat"):
@@ -134,6 +147,7 @@ class Wallet(object):
         self.walletdir = os.path.split(self.walletfile)[0]
         self.db_env = DBEnv(0)
         self.db_env.open(self.walletdir, (DB_CREATE|DB_INIT_LOCK|DB_INIT_LOG|DB_INIT_MPOOL|DB_INIT_TXN|DB_THREAD|DB_RECOVER))
+        self.initialize()
         
     # open wallet database
     def open(self, writable=False):
@@ -154,10 +168,10 @@ class Wallet(object):
     	
     # if wallet does not exist, create it
     def initialize(self):
-        if not os.path.isfile(self.walletfile):
+        if not os.path.isfile(self.walletfile) or True:
             walletdb = self.open(writable = True)
-            print "Initilizing wallet"
-            subaccount = getnewsubaccount()
+            print "Initilizing wallet: >>>>>>>>>>>>>>> FIX ME: I should be initialized only once"
+            subaccount = self.getnewsubaccount()
             walletdb['account'] = dumps({subaccount['address']: subaccount})
             walletdb['accounts'] = dumps(['account'])
             walletdb.sync()
@@ -202,6 +216,18 @@ class Wallet(object):
                 subaccount['received'] = self.chaindb.listreceivedbyaddress(subaccount['address']).values()
         return accounts
                             
+    # helper functions
+    def getnewsubaccount(self):
+        key = CKey()
+        key.generate()
+        private_key = key.get_privkey()
+        public_key = key.get_pubkey()
+        address = pubkey_to_address(public_key)
+        print "Address: ", address
+        print "Private key: ", type(private_key), private_key
+        print "Public key: ", type(public_key), public_key
+        return {"address": address, "public_key": public_key, "private_key": private_key, "balance": 0.0, 'height' : 0, 'received' : []}
+
     # create and return a new address
     def getnewaddress(self, accountname = None):
         if not accountname:
@@ -212,8 +238,9 @@ class Wallet(object):
             print "Wallet not initialized ... quitting!"
             return None
         # if wallet is initialized
-        subaccount = getnewsubaccount()
+        subaccount = self.getnewsubaccount()
         accountnames = loads(walletdb['accounts'])
+        print "account names: ", accountnames
         if accountname in accountnames:
             account = loads(walletdb[accountname])
             account[subaccount['address']] = subaccount
@@ -226,6 +253,7 @@ class Wallet(object):
         walletdb[accountname] = dumps(account)
         walletdb.sync()
         walletdb.close()
+        print subaccount
         return subaccount['public_key'], subaccount['address']
     
     # return balance of an account
@@ -294,7 +322,7 @@ class Wallet(object):
         nValueOut = amount
         public_keys = []
         private_keys = []
-        secrets = []
+        # secrets = []
         # print "subaccounts 4: ", subaccounts
         for subaccount in subaccounts:
             # print "subaccount: ", subaccount
@@ -311,7 +339,7 @@ class Wallet(object):
                 nValueIn = nValueIn + received['value']
                 public_keys.append(subaccount['public_key']) 
                 private_keys.append(subaccount['private_key'])
-                secrets.append(subaccount['secret'])
+                # secrets.append(subaccount['secret'])
                 if nValueIn >= amount + utils.calculate_fees(tx):
                     break
             if nValueIn >= amount + utils.calculate_fees(tx):
@@ -333,11 +361,10 @@ class Wallet(object):
         tx.calc_sha256()
         txhash = str(tx.sha256)
         # sign the transaction
-        for public_key, private_key, secret, txin in zip(public_keys, private_keys, secrets, tx.vin):
+        for pubkey, prikey, txin in zip(public_keys, private_keys, tx.vin):
             key = CKey()
-            print "Private key: ", private_key
-            key.generate(binascii.unhexlify(secret))
-            pubkey_data = key.get_pubkey()
+            key.set_pubkey(pubkey)
+            key.set_privkey(prikey)
             signature = key.sign(txhash)
             # scriptSig = chr(len(signature)) + hash_type + signature + chr(len(public_key)) + public_key
             scriptSig = chr(len(signature)) + signature + chr(len(public_key)) + public_key
