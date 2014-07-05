@@ -1,3 +1,3 @@
 Install pip, vurtualenv and python-dev
-leveldb
+leveldb libleveldb1
 pip install requirements.txt

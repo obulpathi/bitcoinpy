@@ -168,9 +168,13 @@ class Wallet(object):
     	
     # if wallet does not exist, create it
     def initialize(self):
-        if not os.path.isfile(self.walletfile) or True:
+        if not os.path.isfile(self.walletfile):
             walletdb = self.open(writable = True)
-            print "Initilizing wallet: >>>>>>>>>>>>>>> FIX ME: I should be initialized only once"
+            # if wallet is not initialized, return
+            if 'accounts' in walletdb:
+                walletdb.close()
+                print "Wallet is already initialized!"
+                return None
             subaccount = self.getnewsubaccount()
             walletdb['account'] = dumps({subaccount['address']: subaccount})
             walletdb['accounts'] = dumps(['account'])
@@ -184,6 +188,7 @@ class Wallet(object):
         walletdb = self.open()
         # if wallet is not initialized, return
         if 'accounts' not in walletdb:
+            walletdb.close()
             print "Wallet not initialized ... quitting!"
             return None
         # if wallet is initialized
@@ -281,6 +286,10 @@ class Wallet(object):
                 print transaction
                 subaccount['balance'] = subaccount['balance'] + transaction['value']
             subaccount['received'] = transactions
+        # sanitize the return values ... convert from bin to hex
+        for address, subaccount in account.iteritems():
+            subaccount['public_key'] = 1234
+            subaccount['private_key'] = 5678
         return account
 
     # send to an address
