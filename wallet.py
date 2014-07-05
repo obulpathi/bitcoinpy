@@ -376,14 +376,14 @@ class Wallet(object):
         tx.calc_sha256()
         txhash = str(tx.sha256)
         # sign the transaction
-        for pubkey, prikey, txin in zip(public_keys, private_keys, tx.vin):
+        for public_key, private_key, txin in zip(public_keys, private_keys, tx.vin):
             key = CKey()
-            key.set_pubkey(pubkey)
-            key.set_privkey(prikey)
+            key.set_pubkey(public_key)
+            key.set_privkey(private_key)
             signature = key.sign(txhash)
             # scriptSig = chr(len(signature)) + hash_type + signature + chr(len(public_key)) + public_key
             scriptSig = chr(len(signature)) + signature + chr(len(public_key)) + public_key
             print "Adding signature: ", binascii.hexlify(scriptSig)
             txin.scriptSig = scriptSig
-            print "Validity >>>>>>>>>>>>>>>>>: ", tx.is_valid()
+            print "Tx Validity: ", tx.is_valid()
         return tx
