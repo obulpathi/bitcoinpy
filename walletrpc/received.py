@@ -1,6 +1,5 @@
 import sys
 import bitcoinrpc
-import bitcoin.utils
 
 # JSON-RPC server user, password.  Uses HTTP Basic authentication.
 rpcuser="user"

@@ -198,11 +198,13 @@ class Wallet(object):
             return
         # if account is in wallet
         account = loads(walletdb['account']) # FIXME: account = loads(walletdb[accountname])
-        print account
-        for subaccount in account:
-            account[subaccount]['public_key'] = account[subaccount]['public_key'].encode('hex')
-            account[subaccount]['private_key'] = account[subaccount]['private_key'].encode('hex')
         walletdb.close()
+        print account
+        for subaccount in account.itervalues():
+            subaccount['public_key'] = subaccount['public_key'].encode('hex')
+            subaccount['private_key'] = subaccount['private_key'].encode('hex')
+            subaccount['balance'] = self.chaindb.getbalance(subaccount['address'])
+            subaccount['received'] = self.chaindb.listreceivedbyaddress(subaccount['address']).values()
         return account
 
     # getaccounts
