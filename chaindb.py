@@ -144,27 +144,6 @@ class ChainDb(object):
             balance = balance + txout['value']
         return balance
         """
-        end_height = self.getheight()
-        print "\n\naddress: ", address
-        # print "end_height: ", end_height
-        for height in xrange(end_height):
-            # print "height: ", height
-            data = self.db.Get('height:' + str(height))
-            # print "data at height: ", height, data
-            heightidx = HeightIdx()
-            heightidx.deserialize(data)
-            blkhash = heightidx.blocks[0]
-            block = self.getblock(blkhash)
-            # print "block: ", block
-            
-            for tx in block.vtx:
-                for txout in tx.vout:
-                    script_key_hash = utils.output_script_to_public_key_hash(txout.scriptPubKey)
-                    public_key_hash = binascii.hexlify(utils.address_to_public_key_hash(address))
-                    if script_key_hash == public_key_hash:
-                        balance = balance + txout.nValue
-        return balance """
-    """ Merge into getbalance
     # scan the blocks for transactions to this address
     chain_height = 10
     for index in range(height, chain_height):
@@ -205,7 +184,6 @@ class ChainDb(object):
                     # print 'script_key_hash_hex: ', script_key_hash_hex
                     # print 'public_key_hash_hex: ', public_key_hash_hex
                     if script_key_hash_hex == public_key_hash_hex:
-                        #   print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
                         tx.calc_sha256()
                         txouts[tx.sha256] = {'txhash': tx.sha256, 'n': n, 'value': txout.nValue, \
                                              'scriptPubKey': binascii.hexlify(txout.scriptPubKey)}
