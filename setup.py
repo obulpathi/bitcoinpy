@@ -24,9 +24,9 @@ setuptools.setup(
     entry_points = {
         'console_scripts': ['bitcoinpy=bitcoinpy.bitcoinpy:run',
                             'bitcoinpy-miner=bitcoinpy.miner.miner:run',
-                            'pywallet=bitcoinpy.wallet.pywallet:main',],},
-    version = subprocess.Popen(['python', 'bitcoinpy/version.py', '-v'], stdout=subprocess.PIPE).communicate()[0].replace('\n', ''),
-    description = "A secure reversable crypto currency",
+                            'walletpy=bitcoinpy.wallet.walletpy:main',],},
+    version = "0.0.1",
+    description = "Python implementation of Bitcoin",
     url = "https://www.bitcoinpy.org",
     author = "Obulpathi N Challa",
     author_email = "obulpathi@gmail.com",
