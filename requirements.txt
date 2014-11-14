@@ -1,3 +1,2 @@
 gevent
-python-leveldb
-bitcoin-python
+leveldb

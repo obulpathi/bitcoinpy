@@ -1,12 +1,46 @@
-*.pyc
+*.py[cod]
+
+# C extensions
+*.so
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+__pycache__
+
+# Installer logs
+pip-log.txt
 *.log
+
+# Unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
+tests/cover
+
+# git
+*.git
+
+# virtualenv
+venv*
+
+# custom
+*.pyc
 *.swp
 *.bak
-env/
-block0.dat
-main.py
-tmp*
 tags
-tools/wallet.py
-walletrpc/p2sh_send.py
-tools/bitcoin
+.idea/
+.pdbrc
+TAGS
+cscope.*
