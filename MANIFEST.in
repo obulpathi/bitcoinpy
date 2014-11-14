@@ -1,0 +1,5 @@
+include *.py LICENSE *.md *.txt *.cfg *.rst
+recursive-include bitcoinpy *.py
+recursive-include tests *.py
+recursive-include etc *.*
+recursive-include docs *.*
