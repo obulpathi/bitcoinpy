@@ -1,10 +1,10 @@
 import sys
 import argparse
 
-from reversecoin.wallet.wallet import Wallet
-from reversecoin import bitcoinrpc
-from reversecoin.bitcoinrpc.exceptions import TransportException
-from reversecoin.version import VERSION, COPYRIGHT_YEAR
+from bitcoinpy.wallet.wallet import Wallet
+from bitcoinpy import bitcoinrpc
+from bitcoinpy.bitcoinrpc.exceptions import TransportException
+from bitcoinpy.version import VERSION, COPYRIGHT_YEAR
 
 def info(wallet):
 
