@@ -5,7 +5,7 @@ import re
 from bitcoinpy import bitcoinrpc
 
 class Wallet(object):
-    def __init__(self, config_file="~/.reversecoin.cfg"):
+    def __init__(self, config_file="~/.bitcoinpy.cfg"):
         # check if configuration file exists
         if not os.path.isfile(os.path.expanduser(config_file)):
             print('No configuration file: {0}'.format(config_file))
