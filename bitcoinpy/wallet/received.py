@@ -5,10 +5,13 @@ import bitcoinrpc
 rpcuser="user"
 rpcpass="passwd"
 
-address = sys.argv[1]
+address = raw_input("Enter the address to check received transactions: ")
 
 connection = bitcoinrpc.connect_to_remote(rpcuser, rpcpass, host='localhost', port=9333, use_https=False)
 txoutlist = connection.getreceivedbyaddress(address)
 
-for txout in txoutlist:
-    print txout
+for count, txhash in enumerate(txouts):
+    print count
+    print "\ttxhash: ", txouts[txhash]['txhash']
+    print "\tn: ", txouts[txhash]['n']
+    print "\tvalue: ", txouts[txhash]['value']
