@@ -31,7 +31,7 @@ try:
 except ImportError:
     import urlparse
 from collections import defaultdict, deque
-from bitcoinrpc.exceptions import TransportException
+from bitcoinpy.bitcoinrpc.exceptions import TransportException
 
 USER_AGENT = "AuthServiceProxy/0.1"
 

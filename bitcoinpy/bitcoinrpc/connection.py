@@ -20,12 +20,12 @@
 """
 Connect to Bitcoin server via JSON-RPC.
 """
-from bitcoinrpc.proxy import AuthServiceProxy
-from bitcoinrpc.exceptions import (wrap_exception, BitcoinException,
-                                   WalletPassphraseIncorrect,
-                                   WalletAlreadyUnlocked)
-from bitcoinrpc.data import (ServerInfo, AccountInfo, AddressInfo, TransactionInfo,
-                             AddressValidation, WorkItem, MiningInfo)
+from bitcoinpy.bitcoinrpc.proxy import AuthServiceProxy
+from bitcoinpy.bitcoinrpc.exceptions import (wrap_exception, BitcoinException,
+                                             WalletPassphraseIncorrect,
+                                             WalletAlreadyUnlocked)
+from bitcoinpy.bitcoinrpc.data import (ServerInfo, AccountInfo, AddressInfo, TransactionInfo,
+                                       AddressValidation, WorkItem, MiningInfo)
 
 
 class BitcoinConnection(object):

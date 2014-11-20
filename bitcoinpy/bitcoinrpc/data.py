@@ -20,7 +20,7 @@
 """
 Bitcoin RPC service, data objects.
 """
-from bitcoinrpc.util import DStruct
+from bitcoinpy.bitcoinrpc.util import DStruct
 
 
 class ServerInfo(DStruct):
@@ -94,7 +94,7 @@ class TransactionInfo(DStruct):
     - *account* -- account name.
 
     - *address* -- the address bitcoins were sent to, or received from.
-    
+
     - *category* -- will be generate, send, receive, or move.
 
     - *amount* -- amount of transaction.

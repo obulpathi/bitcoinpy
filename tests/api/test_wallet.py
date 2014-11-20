@@ -7,7 +7,7 @@ import unittest
 
 from tests.api import base
 from tests.api import utils
-from bitocinpy import bitcoinrpc
+from bitcoinpy import bitcoinrpc
 
 class TestWallet(base.TestBase):
 

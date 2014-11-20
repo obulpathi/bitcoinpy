@@ -32,8 +32,8 @@ def connect_to_local(filename=None):
 
         - `filename`: Path to a configuration file in a non-standard location (optional)
     """
-    from bitcoinrpc.connection import BitcoinConnection
-    from bitcoinrpc.config import read_default_config
+    from bitcoinpy.bitcoinrpc.connection import BitcoinConnection
+    from bitcoinpy.bitcoinrpc.config import read_default_config
 
     cfg = read_default_config(filename)
     if cfg is None:
@@ -52,6 +52,6 @@ def connect_to_remote(user, password, host='localhost', port=8332,
 
     Returns a :class:`~bitcoinrpc.connection.BitcoinConnection` object.
     """
-    from bitcoinrpc.connection import BitcoinConnection
+    from bitcoinpy.bitcoinrpc.connection import BitcoinConnection
 
     return BitcoinConnection(user, password, host, port, use_https)
