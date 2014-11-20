@@ -4,13 +4,14 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 import random
+import logging
+
 from node import Node
 from connection import Connection
 
 class PeerManager(object):
-    def __init__(self, node, log, mempool, chaindb, netmagic):
+    def __init__(self, node, mempool, chaindb, netmagic):
         self.node = node
-        self.log = log
         self.mempool = mempool
         self.chaindb = chaindb
         self.netmagic = netmagic
@@ -18,9 +19,12 @@ class PeerManager(object):
         self.addrs = {}
         self.tried = {}
         self.connections = []
+        # setup logging
+        logging.basicConfig(level=logging.DEBUG)
+        self.logger = logging.getLogger(__name__)
 
     def add(self, host, port):
-        self.log.write("PeerManager: connecting to %s:%d" % (host, port))
+        self.logger.info("PeerManager: connecting to %s:%d" % (host, port))
         self.tried[host] = True
         connection = Connection(self.node, None, host, port)
         self.connections.append(connection)
@@ -33,7 +37,7 @@ class PeerManager(object):
                 continue
             self.addrs[addr.ip] = addr
 
-        self.log.write("PeerManager: Received %d new addresses (%d addrs, %d tried)" % (len(addrs), len(self.addrs), len(self.tried)))
+        self.logger.info("PeerManager: Received %d new addresses (%d addrs, %d tried)" % (len(addrs), len(self.addrs), len(self.tried)))
 
     def random_addrs(self):
         ips = self.addrs.keys()

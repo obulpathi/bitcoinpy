@@ -12,6 +12,7 @@ import cStringIO
 import struct
 import sys
 import itertools
+import logging
 
 import chaindb
 from bitcoin.core import CBlock
@@ -76,20 +77,22 @@ def blockToJSON(block, blkmeta, cur_height):
     for tx in block.vtx:
         tx.calc_sha256()
         txs.append("%064x" % (tx.sha256,))
-    
+
     res['tx'] = txs
 
     return res
 
 class RPCExec(object):
-    def __init__(self, peermgr, mempool, chaindb, wallet, log, rpcuser, rpcpass):
+    def __init__(self, peermgr, mempool, chaindb, wallet, rpcuser, rpcpass):
         self.peermgr = peermgr
         self.mempool = mempool
         self.chaindb = chaindb
         self.wallet = wallet
         self.rpcuser = rpcuser
         self.rpcpass = rpcpass
-        self.log = log
+        # setup logging
+        logging.basicConfig(level=logging.DEBUG)
+        self.logger = logging.getLogger(__name__)
 
         self.work_tophash = None
         self.work_blocks = {}
@@ -407,7 +410,7 @@ class RPCExec(object):
         return rpcfunc(params)
 
     def log_message(self, format, *args):
-        self.log.write("HTTP %s - - [%s] %s \"%s\" \"%s\"" %
+        self.logger.info("HTTP %s - - [%s] %s \"%s\" \"%s\"" %
             (self.address_string(),
              self.log_date_time_string(),
              format%args,

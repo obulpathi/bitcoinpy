@@ -3,13 +3,17 @@
 # Distributed under the MIT/X11 software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+import logging
+
 from bitcoin.serialize import uint256_to_shortstr
 
 
 class MemPool(object):
-	def __init__(self, log):
+	def __init__(self):
 		self.pool = {}
-		self.log = log
+		# setup logging
+		logging.basicConfig(level=logging.DEBUG)
+		self.logger = logging.getLogger(__name__)
 
 	def add(self, tx):
 		tx.calc_sha256()

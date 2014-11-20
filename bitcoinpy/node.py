@@ -20,6 +20,7 @@ import copy
 import re
 import hashlib
 import rpc
+import logging
 
 import chaindb
 import mempool
@@ -35,19 +36,21 @@ settings = {}
 
 
 class Node(Greenlet): # its not a greenlet .. its just a module
-    def __init__(self, peermgr, log, mempool, chaindb, netmagic):
+    def __init__(self, peermgr, mempool, chaindb, netmagic):
         Greenlet.__init__(self)
-        self.log = log
         self.peermgr = peermgr
         self.mempool = mempool
         self.chaindb = chaindb
         self.netmagic = netmagic
         self.hash_continue = None
         self.ver_send = MIN_PROTO_VERSION
+        # setup logging
+        logging.basicConfig(level=logging.DEBUG)
+        self.logger = logging.getLogger(__name__)
 
     # we don't need this function ... this module just needs to respond to outside function call
     def _run(self):
-        self.log.write(self.dstaddr + " connected")
+        self.logger.info(self.dstaddr + " connected")
         while True:
             try:
                 t = self.sock.recv(8192)
@@ -86,11 +89,11 @@ class Node(Greenlet): # its not a greenlet .. its just a module
         if connection.last_sent + 30 * 60 < time.time():
             connection.send_message(msg_ping(self.ver_send))
         if verbose_recvmsg(message):
-            self.log.write("recv %s" % repr(message))
+            self.logger.info("recv %s" % repr(message))
         if message.command == "version":
             self.ver_send = min(PROTO_VERSION, message.nVersion)
             if self.ver_send < MIN_PROTO_VERSION:
-                self.log.write("Obsolete version %d, closing" % (self.ver_send,))
+                self.logger.info("Obsolete version %d, closing" % (self.ver_send,))
                 self.handle_close()
                 return
             if (self.ver_send >= NOBLKS_VERSION_START and self.ver_send <= NOBLKS_VERSION_END):
@@ -127,9 +130,9 @@ class Node(Greenlet): # its not a greenlet .. its just a module
                 self.send_message(want)
         elif message.command == "tx":
             if self.chaindb.tx_is_orphan(message.tx):
-                self.log.write("MemPool: Ignoring orphan TX %064x" % (message.tx.sha256,))
+                self.logger.info("MemPool: Ignoring orphan TX %064x" % (message.tx.sha256,))
             elif not self.chaindb.tx_signed(message.tx, None, True):
-                self.log.write("MemPool: Ignoring failed-sig TX %064x" % (message.tx.sha256,))
+                self.logger.info("MemPool: Ignoring failed-sig TX %064x" % (message.tx.sha256,))
             else:
                 self.mempool.add(message.tx)
         elif message.command == "block":
