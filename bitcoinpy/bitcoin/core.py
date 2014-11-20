@@ -10,9 +10,9 @@ import socket
 import binascii
 import time
 import hashlib
-from bitcoin.serialize import *
-from bitcoin.coredefs import *
-from bitcoin.script import CScript
+from bitcoinpy.bitcoin.serialize import *
+from bitcoinpy.bitcoin.coredefs import *
+from bitcoinpy.bitcoin.script import CScript
 
 class CAddress(object):
     def __init__(self, protover=PROTO_VERSION):
@@ -351,4 +351,3 @@ class CAlert(object):
         return r
     def __repr__(self):
         return "CAlert(vchMsg.sz %d, vchSig.sz %d)" % (len(self.vchMsg), len(self.vchSig))
-

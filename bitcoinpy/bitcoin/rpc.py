@@ -45,8 +45,8 @@ try:
 except ImportError:
     import urlparse
 
-from bitcoin.coredefs import COIN
-from bitcoin.base58 import CBitcoinAddress
+from bitcoinpy.bitcoin.coredefs import COIN
+from bitcoinpy.bitcoin.base58 import CBitcoinAddress
 
 USER_AGENT = "AuthServiceProxy/0.1"
 

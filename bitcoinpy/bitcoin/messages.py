@@ -9,8 +9,8 @@ import struct
 import time
 import random
 import cStringIO
-from bitcoin.coredefs import *
-from bitcoin.core import *
+from bitcoinpy.bitcoin.coredefs import *
+from bitcoinpy.bitcoin.core import *
 
 MSG_TX = 1
 MSG_BLOCK = 2
@@ -274,7 +274,7 @@ def message_read(netmagic, f):
         recvbuf = f.read(4 + 12 + 4 + 4)
     except IOError:
         return None
-    
+
     # check magic
     if len(recvbuf) < 4:
         return
@@ -327,4 +327,3 @@ def message_to_str(netmagic, message):
     tmsg += data
 
     return tmsg
-
