@@ -5,8 +5,8 @@ from bsddb.db import *
 from pickle import dumps, loads
 
 import binascii
-from bitcoin.key import CKey
-from bitcoin.core import COutPoint, CTxIn, CTxOut, CTransaction
+from bitcoinpy.lib.key import CKey
+from bitcoinpy.lib.core import COutPoint, CTxIn, CTxOut, CTransaction
 
 
 # Joric/bitcoin-dev, june 2012, public domain
@@ -22,11 +22,11 @@ import utils
 walletdb: wallet data structure
     accounts: accounts
         account: the default account
-            subaccount: 
+            subaccount:
                 address: address
                 public_key: public_key
                 private_key: private_key
-                # secret: secret: 
+                # secret: secret:
                 balance: 0.0
                 height: 0
                 received : []
@@ -40,7 +40,7 @@ ssl = ctypes.cdll.LoadLibrary (ctypes.util.find_library ('ssl') or 'libeay32')
 ssl.EC_KEY_new_by_curve_name.restype = ctypes.c_void_p
 
 def check_result (val, func, args):
-    if val == 0: raise ValueError 
+    if val == 0: raise ValueError
     else: return ctypes.c_void_p (val)
 
 
@@ -113,7 +113,7 @@ def rhash(s):
     h1.update(hashlib.sha256(s).digest())
     return h1.digest()
 
-"""    
+"""
 def get_addr(k, version=0):
     pubkey = k.get_pubkey()
     privkey = k.get_privkey()
@@ -125,7 +125,7 @@ def get_addr(k, version=0):
 def pubkey_to_address(pubkey, version=0):
     hash160 = rhash(pubkey)
     return base58_check_encode(hash160, version)
-        
+
 def gen_eckey(passphrase=None, secret=None, pkey=None, compressed=False, rounds=1, version=0):
     k = CKey()
     if passphrase:
@@ -139,7 +139,7 @@ def gen_eckey(passphrase=None, secret=None, pkey=None, compressed=False, rounds=
     k.generate(secret)
     k.set_compressed(compressed)
     return k
-    
+
 # Wallet class
 class Wallet(object):
     def __init__(self, walletfile = "~/.bitcoinpy/wallet.dat"):
@@ -148,7 +148,7 @@ class Wallet(object):
         self.db_env = DBEnv(0)
         self.db_env.open(self.walletdir, (DB_CREATE|DB_INIT_LOCK|DB_INIT_LOG|DB_INIT_MPOOL|DB_INIT_TXN|DB_THREAD|DB_RECOVER))
         self.initialize()
-        
+
     # open wallet database
     def open(self, writable=False):
 	    db = DB(self.db_env)
@@ -165,7 +165,7 @@ class Wallet(object):
 		    logging.error("Couldn't open wallet.dat/main. Try quitting Bitcoin and running this again.")
 		    sys.exit(1)
 	    return db
-    	
+
     # if wallet does not exist, create it
     def initialize(self):
         if not os.path.isfile(self.walletfile):
@@ -226,7 +226,7 @@ class Wallet(object):
                 subaccount['balance'] = self.chaindb.getbalance(subaccount['address'])
                 subaccount['received'] = self.chaindb.listreceivedbyaddress(subaccount['address']).values()
         return accounts
-                            
+
     # helper functions
     def getnewsubaccount(self):
         key = CKey()
@@ -257,7 +257,7 @@ class Wallet(object):
             account[subaccount['address']] = subaccount
         else:
             print "account: ", accountname, " not in accounts"
-            print "creating new account" 
+            print "creating new account"
             account = {subaccount['address']: subaccount}
             # add the new account name to account names
             walletdb['accounts'] = dumps(accountnames.append(accountname))
@@ -266,7 +266,7 @@ class Wallet(object):
         walletdb.close()
         print subaccount
         return subaccount['public_key'], subaccount['address']
-    
+
     # return balance of an account
     def getbalance(self, accountname):
         if not accountname:
@@ -299,7 +299,7 @@ class Wallet(object):
         return account
 
     # send to an address
-    def sendtoaddress(self, toaddress, amount):        
+    def sendtoaddress(self, toaddress, amount):
         # select the input addresses
         funds = 0
         subaccounts = []
@@ -315,23 +315,23 @@ class Wallet(object):
                     funds = funds + subaccount['balance']
                     if funds >= amount + utils.calculate_fees(None):
                         break
-        
+
         # print "subaccounts 2: ", subaccounts
         # incase of insufficient funds, return
         if funds < amount + utils.calculate_fees(None):
             print "In sufficient funds, exiting, return"
             return
-            
+
         # create transaction
         tx = CTransaction()
-        
+
         # print "subaccounts 3: ", subaccounts
         # to the receiver
         txout = CTxOut()
         txout.nValue = amount
         txout.scriptPubKey = utils.address_to_pay_to_pubkey_hash(toaddress)
         tx.vout.append(txout)
-        
+
         # from the sender
         nValueIn = 0
         nValueOut = amount
@@ -352,7 +352,7 @@ class Wallet(object):
                 txin.scriptSig = binascii.unhexlify(received['scriptPubKey'])
                 tx.vin.append(txin)
                 nValueIn = nValueIn + received['value']
-                public_keys.append(subaccount['public_key']) 
+                public_keys.append(subaccount['public_key'])
                 private_keys.append(subaccount['private_key'])
                 # secrets.append(subaccount['secret'])
                 if nValueIn >= amount + utils.calculate_fees(tx):
@@ -371,7 +371,7 @@ class Wallet(object):
             changeaddress = subaccounts[0]['address']
             change_txout.scriptPubKey = utils.address_to_pay_to_pubkey_hash(changeaddress)
             tx.vout.append(change_txout)
-        
+
         # calculate txhash
         tx.calc_sha256()
         txhash = str(tx.sha256)

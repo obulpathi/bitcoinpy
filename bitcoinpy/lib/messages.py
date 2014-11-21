@@ -9,8 +9,8 @@ import struct
 import time
 import random
 import cStringIO
-from bitcoinpy.bitcoin.coredefs import *
-from bitcoinpy.bitcoin.core import *
+from bitcoinpy.lib.coredefs import *
+from bitcoinpy.lib.core import *
 
 MSG_TX = 1
 MSG_BLOCK = 2

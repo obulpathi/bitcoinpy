@@ -15,9 +15,9 @@ import itertools
 import logging
 
 import chaindb
-from bitcoin.core import CBlock
-import bitcoin.coredefs
-from bitcoin.serialize import uint256_from_compact
+from lib.core import CBlock
+import lib.coredefs
+from lib.serialize import uint256_from_compact
 
 VALID_RPCS = {
     "getaccount",

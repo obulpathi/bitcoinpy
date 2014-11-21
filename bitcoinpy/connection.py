@@ -14,8 +14,8 @@ import log
 import cStringIO
 
 from common import *
-from bitcoin.coredefs import MIN_PROTO_VERSION
-from bitcoin.messages import messagemap, msg_version, msg_ping, message_to_str
+from lib.coredefs import MIN_PROTO_VERSION
+from lib.messages import messagemap, msg_version, msg_ping, message_to_str
 
 class Connection(Greenlet):
     def __init__(self, node, peersocket, address, port = None):

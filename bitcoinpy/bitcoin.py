@@ -23,14 +23,15 @@ import shutil
 import logging
 
 import rpc
-from wallet import Wallet
+from walletdb import Wallet
 from log import Log
 from node import Node
 from mempool import MemPool
 from chaindb import ChainDb
 from connection import Connection
 from peermanager import PeerManager
-from bitcoin.coredefs import NETWORKS
+from lib.coredefs import NETWORKS
+
 
 def initialize(datadir):
     os.mkdir(datadir)

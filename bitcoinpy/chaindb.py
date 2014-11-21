@@ -17,11 +17,11 @@ from decimal import Decimal
 from cache import Cache
 
 from common import *
-from bitcoin.serialize import *
-from bitcoin.core import *
-from bitcoin.messages import msg_block, message_to_str, message_read
-from bitcoin.coredefs import COIN
-from bitcoin.scripteval import VerifySignature
+from lib.serialize import *
+from lib.core import *
+from lib.messages import msg_block, message_to_str, message_read
+from lib.coredefs import COIN
+from lib.scripteval import VerifySignature
 
 
 def tx_blk_cmp(a, b):

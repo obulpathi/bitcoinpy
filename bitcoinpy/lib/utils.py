@@ -2,8 +2,8 @@
 
 import binascii
 import hashlib
-from bitcoinpy.bitcoin.key import CKey as Key
-from bitcoinpy.bitcoin.base58 import encode, decode
+from bitcoinpy.lib.key import CKey as Key
+from bitcoinpy.lib.base58 import encode, decode
 
 def myhash(s):
     return hashlib.sha256(hashlib.sha256(s).digest()).digest()

@@ -15,9 +15,9 @@ import cStringIO
 import struct
 import argparse
 
-from bitcoin.coredefs import NETWORKS
-from bitcoin.core import CBlock
-from bitcoin.scripteval import *
+from lib.coredefs import NETWORKS
+from lib.core import CBlock
+from lib.scripteval import *
 
 NET_SETTINGS = {
 	'mainnet' : {
@@ -53,7 +53,7 @@ if args.latest:
 	scan_height = chaindb.getheight()
 else:
 	scan_height = 216116
-	
+
 out_fn = 'bootstrap.dat'
 log.write("Outputting to %s, up to height %d" % (out_fn, scan_height))
 
@@ -89,4 +89,3 @@ for height in xrange(scan_height+1):
 			height, failures))
 
 log.write("Scanned %d blocks (%d failures)" % (scanned, failures))
-

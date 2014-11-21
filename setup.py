@@ -22,7 +22,7 @@ setuptools.setup(
     install_requires=reqs,
     packages = [_PKG_ROOT] + [_PKG_ROOT+'.'+p for p in setuptools.find_packages(_PKG_ROOT)],
     entry_points = {
-        'console_scripts': ['bitcoinpy=bitcoinpy.bitcoinpy:run',
+        'console_scripts': ['bitcoinpy=bitcoinpy.bitcoin:run',
                             'minerpy=bitcoinpy.miner.miner:run',
                             'walletpy=bitcoinpy.wallet.walletpy:main',],},
     version = "0.0.1",

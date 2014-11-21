@@ -2,9 +2,9 @@
 
 import binascii
 import hashlib
-from bitcoin.key import CKey as Key
-from bitcoin.base58 import encode, decode
-from bitcoin.script import OP_DUP, OP_HASH160, OP_EQUALVERIFY, OP_CHECKSIG
+from lib.key import CKey as Key
+from lib.base58 import encode, decode
+from lib.script import OP_DUP, OP_HASH160, OP_EQUALVERIFY, OP_CHECKSIG
 
 def myhash(s):
     return hashlib.sha256(hashlib.sha256(s).digest()).digest()
@@ -84,7 +84,7 @@ def public_key_hex_to_pay_to_script_hash(public_key_hex):
 def public_key_hex_to_pay_to_pubkey(public_key_hex):
     script = "41" + public_key_hex + "AC"
     return binascii.unhexlify(script)
-        
+
 def public_key_to_pay_to_pubkey(public_key):
     script = "41" + binascii.hexlify(public_key) + "AC"
     return binascii.unhexlify(script)
@@ -100,7 +100,7 @@ def sriptSig_to_pubkey(script):
     len_signed_data = ord(script[0])
     len_pubkey_data = ord(script[len_signed_data:len_signed_data+1])
     return script[-len_pubkey_data:]
-    
+
 def output_script_to_public_key_hash(script):
     # better matching .. but for now . .. this should work
     if not script:
@@ -124,7 +124,7 @@ def scriptSig_to_public_key_hash(script):
     script = script[1 + signature_length:]
     # remove pubkey length and return
     return script [1:]
-    
+
 """
 # Output script to address representation
 def script_to_address(script,vbyte=0):
@@ -151,14 +151,14 @@ def mk_scripthash_script(addr):
 def address_to_script(addr):
     if addr[0] == '3': return mk_scripthash_script(addr)
     else: return mk_pubkey_script(addr)
-    
+
 def address_to_output_script(address):
     pass
 
 # FIX ME: fees is not fixed, but for now its isset to 1
 def calculate_fees(tx):
     return 1
-    
+
 if __name__ == "__main__":
     address1 = "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM"
     address2 = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"

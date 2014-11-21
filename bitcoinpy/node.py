@@ -27,10 +27,10 @@ import mempool
 import log
 
 from common import *
-from bitcoin.core import *
-from bitcoin.serialize import *
-from bitcoin.messages import *
-from bitcoin.coredefs import NETWORKS
+from lib.core import *
+from lib.serialize import *
+from lib.messages import *
+from lib.coredefs import NETWORKS
 
 settings = {}
 

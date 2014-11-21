@@ -10,10 +10,10 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import struct
 import math
-from bitcoinpy.bitcoin.serialize import *
-from bitcoinpy.bitcoin.coredefs import *
-from bitcoinpy.bitcoin.core import *
-from bitcoinpy.bitcoin.hash import MurmurHash3
+from bitcoinpy.lib.serialize import *
+from bitcoinpy.lib.coredefs import *
+from bitcoinpy.lib.core import *
+from bitcoinpy.lib.hash import MurmurHash3
 
 class CBloomFilter(object):
     # 20,000 items with fp rate < 0.1% or 10,000 items and <0.0001%
