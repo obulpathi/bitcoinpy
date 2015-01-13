@@ -1,6 +1,7 @@
 Bitcoinpy
 =========
 
+Build status: [![Build Status](https://travis-ci.org/obulpathi/bitcoinpy.svg?branch=master)](https://travis-ci.org/obulpathi/bitcoinpy)
 Bitcoinpy is a Python implementation of Bitcoin to help understand the internals of Bitcoin easy.
 
 
