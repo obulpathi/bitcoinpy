@@ -9,7 +9,7 @@ import unittest
 
 from binascii import unhexlify
 
-from bitcoinpy.bitcoin.base58 import *
+from bitcoinpy.lib.base58 import *
 
 
 def load_sample_vector(name):

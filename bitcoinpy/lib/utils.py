@@ -2,9 +2,9 @@
 
 import binascii
 import hashlib
-from lib.key import CKey as Key
-from lib.base58 import encode, decode
-from lib.script import OP_DUP, OP_HASH160, OP_EQUALVERIFY, OP_CHECKSIG
+from key import CKey as Key
+from base58 import encode, decode
+from script import OP_DUP, OP_HASH160, OP_EQUALVERIFY, OP_CHECKSIG
 
 def myhash(s):
     return hashlib.sha256(hashlib.sha256(s).digest()).digest()

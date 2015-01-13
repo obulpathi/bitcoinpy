@@ -9,7 +9,7 @@ import unittest
 
 from binascii import unhexlify
 
-from bitcoinpy.bitcoin.bloom import *
+from bitcoinpy.lib.bloom import *
 
 class Test_CBloomFilter(unittest.TestCase):
     def test_create_insert_serialize(self):

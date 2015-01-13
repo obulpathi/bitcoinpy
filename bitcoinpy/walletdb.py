@@ -14,7 +14,7 @@ import hashlib
 import ctypes
 import ctypes.util
 import sys
-import utils
+from lib import utils
 #import base58
 
 

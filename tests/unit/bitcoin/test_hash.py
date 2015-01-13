@@ -9,7 +9,7 @@ import unittest
 
 from binascii import unhexlify
 
-from bitcoinpy.bitcoin.hash import *
+from bitcoinpy.lib.hash import *
 
 class Test_MurmurHash3(unittest.TestCase):
     def test(self):

@@ -1,5 +1,5 @@
 import binascii
-from bitcoinpy.bitcoin.serialize import *
+from bitcoinpy.lib.serialize import *
 
 compact = 0x1b00ffff
 #print "seed compact: ", hex(compact)

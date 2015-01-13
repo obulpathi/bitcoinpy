@@ -1,6 +1,6 @@
 import unittest
 
-from bitcoinpy.bitcoin import utils
+from bitcoinpy.lib import utils
 
 class TestUtils(unittest.TestCase):
     def setUp(self):

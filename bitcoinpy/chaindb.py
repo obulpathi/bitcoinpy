@@ -9,7 +9,6 @@ import leveldb
 import io
 import os
 import time
-import utils
 import binascii
 import shutil
 import logging
@@ -22,6 +21,7 @@ from lib.core import *
 from lib.messages import msg_block, message_to_str, message_read
 from lib.coredefs import COIN
 from lib.scripteval import VerifySignature
+from lib import utils
 
 
 def tx_blk_cmp(a, b):
